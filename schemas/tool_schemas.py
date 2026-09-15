@@ -47,6 +47,10 @@ class ToolResult(BaseModel, Generic[T]):
 
 
 
+# Tool: get_product
+class GetProductInput(InputModel):
+    sku: str = Field(description="Unique product identifier (stock keeping unit), e.g. 'AC-001'.")
+
 
 class ProductRecord(OutputModel):
     sku: str = Field(description="Unique product identifier (stock keeping unit), e.g. 'AC-001'.")

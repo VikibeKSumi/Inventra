@@ -1,15 +1,17 @@
+import hashlib, json
 
+from capabilities.repository.sqlite_repository import SQLiteRepository
+from capabilities.repository.clock import Clock
 from schemas.tool_schemas import (
     ToolResult, 
     EvidenceRef,
+    GetProductInput,
     ProductRecord
 
 )
-from datetime import datetime
-import hashlib, json
 
 class CapabilityService:
-    def __init__(self, repository, clock):
+    def __init__(self, repository: SQLiteRepository, clock: Clock):
         self.repository = repository      # your DB access object
         self.clock = clock                # injected clock (no datetime.now())
 
@@ -18,9 +20,9 @@ class CapabilityService:
             json.dumps(data, sort_keys=True, default=str).encode()
         ).hexdigest()
 
-    def get_product(self, sku: str) -> ToolResult[ProductRecord]:
+    def get_product(self, request: GetProductInput) -> ToolResult[ProductRecord]:
         now = self.clock.now()
-        row = self.repository.get_product(sku)          # dict row, or None
+        row = self.repository.get_product(request.sku)          # dict row, or None
 
         # 1. not found
         if row is None:
@@ -28,7 +30,7 @@ class CapabilityService:
                 success=False,
                 result_code="NOT_FOUND",
                 payload=None,
-                message=f"No product found for SKU '{sku}'.",
+                message=f"No product found for SKU '{request.sku}'.",
                 evidence=(),
             )
 
@@ -36,7 +38,7 @@ class CapabilityService:
         evidence = (
             EvidenceRef(
                 source="products",
-                record_ids=[sku],
+                record_ids=[request.sku],
                 observed_at=None,               # products carry no capture time
                 retrieved_at=now,
                 fingerprint=self._fingerprint(row),
@@ -49,7 +51,7 @@ class CapabilityService:
                 success=False,
                 result_code="INACTIVE",
                 payload=None,
-                message=f"Product '{sku}' is inactive (discontinued).",
+                message=f"Product '{request.sku}' is inactive (discontinued).",
                 evidence=evidence,
             )
 
@@ -64,6 +66,6 @@ class CapabilityService:
             success=True,
             result_code="OK",
             payload=payload,
-            message=f"Product '{sku}' found.",
+            message=f"Product '{request.sku}' found.",
             evidence=evidence,
         )
