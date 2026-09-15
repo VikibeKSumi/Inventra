@@ -13,9 +13,9 @@ class CapabilityService():
             "category": category,
             "active": active,
         }
-        
+        suc
         output = ToolResult(
-            ok=ok,
+            success=success,
             code=code,
             message=message,
             evidence=evidece

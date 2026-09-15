@@ -1,3 +1,67 @@
+
+
+from pydantic import BaseModel, Field, ConfigDict
+from typing import Literal, Optional, Generic, TypeVar
+from datetime import datetime
+
+
+class InputModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+class EvidenceRef(BaseModel):
+    model_config = ConfigDict(frozen=True)
+    source: Literal[
+        "products", "inventory_snapshots", "sales_daily",
+        "vendors", "vendor_offers", "monthly_budgets",
+        "purchase_requests", "audit_events",
+    ] = Field(description="Which table/dataset this fact came from — identifies the kind of record read or written.")
+    record_ids: list[str] = Field(description="The exact row identifiers read from the source (e.g. snapshot_id, sku, offer_id). A list because one read can span multiple rows, such as several days of sales.")
+    observed_at: Optional[datetime] = Field(default=None, description="When the fact was captured in the source system (e.g. a snapshot's captured_at). Used for freshness checks. None when the record has no real-world capture time.")
+    retrieved_at: datetime = Field(description="When this system read the record. Set by us at read time; used for the audit trail, not for freshness.")
+    fingerprint: str = Field(description="Hash of the record's content at read time. Re-hashing later and comparing detects whether the underlying data changed (used in revalidation).")
+
+    
+
+T = TypeVar("T")
+class ToolResult(BaseModel, Generic[T]):
+    success: bool = Field(description="Whether the tool completed its job successfully. False means the request could not be fulfilled; check result_code for why.")
+    result_code: Literal[
+        "OK",
+        "NOT_FOUND",
+        "DATA_STALE",
+        "INSUFFICIENT_HISTORY",
+        "NO_VALID_OFFER",
+        "OVER_BUDGET",
+        "APPROVAL_REQUIRED",
+        "DATA_CHANGED",
+        "ALREADY_EXISTS",
+        "WRITE_FAILED",
+    ] = Field(description="Machine-readable outcome code from a fixed set. Callers and routing branch on this; it names exactly what happened (success or the specific failure).")
+    payload: Optional[T] = Field(default=None, description="The tool's typed result data (its per-tool schema). None when there is nothing to return, e.g. on failure.")
+    message: str = Field(default="", description="Short human-readable explanation of the outcome, for logs and UI. Never parsed for control flow — that's result_code's job.")
+    evidence: tuple[EvidenceRef, ...] = Field(default_factory=tuple, description="The source records this result is grounded in (IDs, timestamps, fingerprints), enabling audit and revalidation.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #===========ENUMS==============
 class ErrorCode(str, Enum):
     """Typed error codes returned by tools."""
@@ -9,6 +73,8 @@ class ErrorCode(str, Enum):
     UNAUTHORIZED = "UNAUTHORIZED"
     WRITE_FAILED = "WRITE_FAILED"
     UNKNOWN_ERROR = "UNKNOWN_ERROR"
+
+
 
 #=============SALES================
 
