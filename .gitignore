@@ -218,4 +218,6 @@ __marimo__/
 .streamlit/secrets.toml
 
 
+
+design_files/
 test.ipynb
