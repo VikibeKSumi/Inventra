@@ -8,8 +8,11 @@ from datetime import datetime
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
-class EvidenceRef(BaseModel):
+class OutputModel(BaseModel):
     model_config = ConfigDict(frozen=True)
+
+
+class EvidenceRef(OutputModel):
     source: Literal[
         "products", "inventory_snapshots", "sales_daily",
         "vendors", "vendor_offers", "monthly_budgets",
@@ -44,9 +47,11 @@ class ToolResult(BaseModel, Generic[T]):
 
 
 
-
-
-
+class ProductRecord(OutputModel):
+    sku: str = Field(description="Unique product identifier (stock keeping unit), e.g. 'AC-001'.")
+    name: str = Field(description="Human-readable product name.")
+    category: str = Field(description="Product category/group used for organizing and warehouse-wide filtering.")
+    active: bool = Field(description="Whether the product is currently sold/stocked. False = discontinued and must not be restocked.")
 
 
 
