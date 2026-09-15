@@ -39,6 +39,7 @@ class ToolResult(BaseModel, Generic[T]):
         "DATA_CHANGED",
         "ALREADY_EXISTS",
         "WRITE_FAILED",
+        "INACTIVE"
     ] = Field(description="Machine-readable outcome code from a fixed set. Callers and routing branch on this; it names exactly what happened (success or the specific failure).")
     payload: Optional[T] = Field(default=None, description="The tool's typed result data (its per-tool schema). None when there is nothing to return, e.g. on failure.")
     message: str = Field(default="", description="Short human-readable explanation of the outcome, for logs and UI. Never parsed for control flow — that's result_code's job.")
