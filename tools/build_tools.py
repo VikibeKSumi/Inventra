@@ -4,7 +4,7 @@ from capabilities.capabilities import CapabilityService
 from schemas.tool_schemas import (
     GetProductInput, GetStockPositionInput, GetSalesVelocityInput,
     CalculateStockRiskInput, GetPolicyGuidanceInput, GetVendorOffersInput, 
-    GetVendorPerformanceInput
+    GetVendorPerformanceInput, GetBudgetPositionInput
 )
 
 
@@ -145,9 +145,29 @@ def build_tools(service: CapabilityService,):
         ).model_dump(mode="json")
 
 
+    @tool(args_schema=GetBudgetPositionInput)
+    def get_budget_position(warehouse_id) -> dict:
+        """Get the remaining monthly budget for a warehouse.
+
+        Use this before proposing a purchase, to check what a new order must fit under.
+        The month is taken from the system clock; you only pass the warehouse.
+
+        Returns a ToolResult with:
+        - OK: the budget position (budget_amount, spent_amount, committed_amount, remaining_budget).
+        - NOT_FOUND: no budget exists for this warehouse in the current month.
+
+        remaining_budget = budget_amount - spent_amount - committed_amount. It reports the
+        numbers only; it does not decide whether an order fits (that's build_vendor_options).
+        """
+        return service.get_budget_position(
+            request=GetBudgetPositionInput(warehouse_id=warehouse_id)
+        ).model_dump(mode="json")
+
+
     tools_list = [
-        get_product, get_stock_position, get_sales_velocity, calculate_stock_risk,
-        get_policy_guidance, list_vendor_offers, get_vendor_performance]
+        get_product, get_stock_position, get_sales_velocity,
+        calculate_stock_risk, get_policy_guidance, list_vendor_offers,
+        get_vendor_performance, get_budget_position]
 
     
     return tools_list
