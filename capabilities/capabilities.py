@@ -1,6 +1,8 @@
 import hashlib, json
 from datetime import datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
+import yaml
 
 from config.config import Config
 from capabilities.repository.sqlite_repository import SQLiteRepository
@@ -8,7 +10,8 @@ from capabilities.repository.clock import Clock
 from schemas.tool_schemas import (
     ToolResult, EvidenceRef,
     GetProductInput, ProductRecord, GetStockPositionInput, InventorySnapshot,
-    GetSalesVelocityInput, VelocityRecord, CalculateStockRiskInput, RiskAssessment
+    GetSalesVelocityInput, VelocityRecord, CalculateStockRiskInput, RiskAssessment,
+    GetPolicyGuidanceInput, PolicyGuidance
 )
 
 
@@ -20,7 +23,8 @@ class CapabilityService:
         self.STALE_THRESHOLD_HOURS = config.stale_threshold_hours
         self.VELOCITY_WINDOW_DAYS = config.velocity_window_days
         self.RISK_THRESHOLD_DAYS = config.risk_threshold_days
-        
+        self.POLICY_PATH = config.policy_path
+
     def _fingerprint(self, data) -> str:
         return hashlib.sha256(
             json.dumps(data, sort_keys=True, default=str).encode()
@@ -196,5 +200,58 @@ class CapabilityService:
         return ToolResult(success=True, result_code="OK", payload=payload,
                         message=f"Risk assessed for '{request.sku}': {status}.",
                         evidence=stock.evidence + vel.evidence)   # combine both sources
+
+
+    def get_policy_guidance(self, request: GetPolicyGuidanceInput) -> ToolResult[PolicyGuidance]:
+        now = self.clock.now()
+
+        try:
+            raw = Path(self.POLICY_PATH).read_text(encoding="utf-8")
+        except FileNotFoundError:
+            return ToolResult(
+                success=False, result_code="NOT_FOUND", payload=None,
+                message="Policy document not found.", evidence=(),
+            )
+
+        # policy.md must start with a YAML front-matter header:
+        #   ---\n version: ... \n summary: ... \n---\n <body>
+        parts = raw.split("---", 2)
+        if len(parts) < 3:
+            return ToolResult(
+                success=False, result_code="INVALID_DATA", payload=None,
+                message="Policy document is missing its version/summary header.",
+                evidence=(),
+            )
+        meta = yaml.safe_load(parts[1]) or {}
+        body = parts[2].strip()
+
+        if "version" not in meta or "summary" not in meta:
+            return ToolResult(
+                success=False, result_code="INVALID_DATA", payload=None,
+                message="Policy header must define both 'version' and 'summary'.",
+                evidence=(),
+            )
+
+        evidence = (
+            EvidenceRef(
+                source="policy",
+                record_ids=[str(meta["version"])],
+                observed_at=None,
+                retrieved_at=now,
+                fingerprint=self._fingerprint(raw),
+            ),
+        )
+
+        payload = PolicyGuidance(
+            summary=str(meta["summary"]),
+            full_text=body,
+            source_path=self.POLICY_PATH,
+            policy_version=str(meta["version"]),
+        )
+
+        return ToolResult(
+            success=True, result_code="OK", payload=payload,
+            message="Policy guidance retrieved.", evidence=evidence,
+        )
 
 
