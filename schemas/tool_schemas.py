@@ -142,7 +142,17 @@ class VendorPerformance(OutputModel):
     quality_score: Decimal = Field(description="Quality rating (0-1).")
 
 
+# Tool 8:
+class GetBudgetPositionInput(InputModel):
+    warehouse_id: str = Field(description="Warehouse whose current-month budget position is requested.")
 
+class BudgetPosition(OutputModel):
+    warehouse_id: str = Field(description="Warehouse this budget belongs to.")
+    month: str = Field(description="Budget month (YYYY-MM), taken from the injected clock.")
+    budget_amount: Decimal = Field(description="Total budget allocated for the month.")
+    spent_amount: Decimal = Field(description="Amount already spent this month.")
+    committed_amount: Decimal = Field(description="Amount committed (approved but not yet spent).")
+    remaining_budget: Decimal = Field(description="Computed: budget_amount - spent_amount - committed_amount. What a new order must fit under.")
 
 
 
