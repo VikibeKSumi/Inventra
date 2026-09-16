@@ -17,7 +17,10 @@ class CapabilityService:
         self.repository = repository     
         self.clock = clock               
         self.MIN_DAYS_HISTORY = config.min_days_history
-
+        self.STALE_THRESHOLD_HOURS = config.stale_threshold_hours
+        self.VELOCITY_WINDOW_DAYS = config.velocity_window_days
+        self.RISK_THRESHOLD_DAYS = config.risk_threshold_days
+        
     def _fingerprint(self, data) -> str:
         return hashlib.sha256(
             json.dumps(data, sort_keys=True, default=str).encode()
