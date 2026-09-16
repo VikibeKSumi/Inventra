@@ -4,7 +4,7 @@ from capabilities.capabilities import CapabilityService
 from schemas.tool_schemas import (
     GetProductInput, GetStockPositionInput, GetSalesVelocityInput,
     CalculateStockRiskInput, GetPolicyGuidanceInput, GetVendorOffersInput, 
-    GetVendorPerformanceInput, GetBudgetPositionInput
+    GetVendorPerformanceInput, GetBudgetPositionInput, BuildVendorOptionsInput
 )
 
 
@@ -164,10 +164,35 @@ def build_tools(service: CapabilityService,):
         ).model_dump(mode="json")
 
 
+    @tool(args_schema=BuildVendorOptionsInput)
+    def build_vendor_options(sku, warehouse_id, target_cover_days) -> dict:
+        """Build fully-costed, feasibility-checked replenishment options for a SKU.
+
+        Use this once a SKU is at risk, to see the actual buying options. It gathers risk,
+        offers, vendor performance, and budget itself, then for each offer computes the
+        order quantity (to target cover, respecting MOQ), total cost, expected arrival,
+        and whether it's feasible.
+
+        Returns a ToolResult with:
+        - OK: a list of options, each with proposed_quantity, total_cost, expected_arrival,
+        eligible, and rejection_reasons. Pick from the ELIGIBLE ones only.
+        - OVER_BUDGET: options exist but the only blocker is budget.
+        - NO_VALID_OFFER: no feasible option (unreliable vendors, late arrival, etc.).
+        - NOT_FOUND / DATA_STALE / INSUFFICIENT_HISTORY: propagated from the risk check.
+
+        It sizes, prices, and vets every offer but does NOT choose one — you select from the
+        eligible options and explain the trade-off.
+        """
+        return service.build_vendor_options(
+            request=BuildVendorOptionsInput(
+                sku=sku, warehouse_id=warehouse_id, target_cover_days=target_cover_days
+            )
+        ).model_dump(mode="json")
+
     tools_list = [
         get_product, get_stock_position, get_sales_velocity,
         calculate_stock_risk, get_policy_guidance, list_vendor_offers,
-        get_vendor_performance, get_budget_position]
+        get_vendor_performance, get_budget_position, build_vendor_options]
 
     
     return tools_list
