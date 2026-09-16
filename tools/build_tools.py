@@ -2,7 +2,7 @@
 from langchain_core.tools import tool
 from capabilities.capabilities import CapabilityService
 from schemas.tool_schemas import (
-    GetProductInput, GetStockPositionInput
+    GetProductInput, GetStockPositionInput, GetSalesVelocityInput
 )
 
 
@@ -41,3 +41,30 @@ def build_tools(service: CapabilityService,):
         return service.get_stock_position(
             request=GetStockPositionInput(sku=sku, warehouse_id=warehouse_id)
         ).model_dump(mode="json")
+
+
+    @tool(args_schema=GetSalesVelocityInput)                     
+    def get_sales_velocity(sku, warehouse_id, lookback_days=30): 
+        """Measure sales velocity (average daily units) for a SKU in a warehouse.
+
+        Use this to learn how fast an item sells before assessing stock risk or sizing
+        a reorder. Averages units sold over the given window (7, 14, or 30 days).
+
+        Returns a ToolResult with:
+        - OK: a velocity record (average_daily_units, units_sold, observed_days, window).
+        - INSUFFICIENT_HISTORY: too few days of sales to trust the rate; no payload.
+
+        Missing sales days count as zero sales, not missing data. average_daily_units
+        is exact (Decimal) for downstream cover and reorder math.
+        """
+        return service.get_sales_velocity(
+            request=GetSalesVelocityInput(
+                sku=sku, warehouse_id=warehouse_id, lookback_days=lookback_days
+            )
+        ).model_dump(mode="json")
+
+    
+
+    
+    tools_list = [get_product, get_stock_position, get_sales_velocity]
+    return tools_list
