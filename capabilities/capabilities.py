@@ -13,7 +13,8 @@ from schemas.tool_schemas import (
     GetProductInput, ProductRecord, GetStockPositionInput, InventorySnapshot,
     GetSalesVelocityInput, VelocityRecord, CalculateStockRiskInput, RiskAssessment,
     GetPolicyGuidanceInput, PolicyGuidance, GetVendorOffersInput, VendorOffer,
-    GetVendorPerformanceInput, VendorPerformance
+    GetVendorPerformanceInput, VendorPerformance, GetBudgetPositionInput, BudgetPosition,
+    
 )
 
 
@@ -75,7 +76,6 @@ class CapabilityService:
         )
 
 
-    
     def get_stock_position(self, request: GetStockPositionInput) -> ToolResult[InventorySnapshot]:
         now = self.clock.now()
         row = self.repository.get_stock_position(request.sku, request.warehouse_id)
@@ -163,7 +163,6 @@ class CapabilityService:
         )
 
 
- 
     def calculate_stock_risk(self, request: CalculateStockRiskInput) -> ToolResult[RiskAssessment]:
         now = self.clock.now()
 
@@ -257,8 +256,6 @@ class CapabilityService:
         )
 
 
-
-
     def list_vendor_offers(self, request: GetVendorOffersInput) -> ToolResult[list[VendorOffer]]:
         now = self.clock.now()
         rows = self.repository.get_vendor_offers(request.sku)
@@ -302,7 +299,6 @@ class CapabilityService:
         )
 
 
-
     def get_vendor_performance(self, request: GetVendorPerformanceInput) -> ToolResult[list[VendorPerformance]]:
         now = self.clock.now()
         rows = self.repository.get_vendor_performance(request.vendor_ids)
@@ -339,3 +335,45 @@ class CapabilityService:
 
         return ToolResult(success=True, result_code="OK", payload=performances,
                         message=msg, evidence=evidence)
+
+
+    def get_budget_position(self, request: GetBudgetPositionInput) -> ToolResult[BudgetPosition]:
+        now = self.clock.now()
+        month = now.strftime("%Y-%m")                     # current month from injected clock
+
+        row = self.repository.get_budget_position(request.warehouse_id, month)
+        if row is None:
+            return self._fail(
+                "NOT_FOUND",
+                f"No budget for warehouse '{request.warehouse_id}' in {month}.",
+            )
+
+        budget = Decimal(str(row["budget_amount"]))
+        spent = Decimal(str(row["spent_amount"]))
+        committed = Decimal(str(row["committed_amount"]))
+        remaining = budget - spent - committed
+
+        evidence = (
+            EvidenceRef(
+                source="monthly_budgets",
+                record_ids=[f"{request.warehouse_id}:{month}"],
+                observed_at=None,
+                retrieved_at=now,
+                fingerprint=self._fingerprint(row),
+            ),
+        )
+
+        payload = BudgetPosition(
+            warehouse_id=row["warehouse_id"],
+            month=row["month"],
+            budget_amount=budget,
+            spent_amount=spent,
+            committed_amount=committed,
+            remaining_budget=remaining,
+        )
+
+        return ToolResult(
+            success=True, result_code="OK", payload=payload,
+            message=f"Budget for '{request.warehouse_id}' ({month}): {remaining} remaining.",
+            evidence=evidence,
+        )
