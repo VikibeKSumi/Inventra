@@ -34,3 +34,12 @@ class SQLiteRepository:
             ).fetchone()
         return dict(row) if row else None
 
+    def get_sales(self, sku: str, warehouse_id: str, start: str, end: str) -> list[dict]:
+    with self._connect() as conn:
+        rows = conn.execute(
+            """SELECT sale_date, units_sold FROM sales_daily
+               WHERE sku = ? AND warehouse_id = ?
+                 AND sale_date >= ? AND sale_date <= ?""",
+            (sku, warehouse_id, start, end),
+        ).fetchall()
+    return [dict(r) for r in rows]
