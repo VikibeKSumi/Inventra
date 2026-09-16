@@ -19,3 +19,18 @@ class SQLiteRepository:
                 (sku,),
             ).fetchone()
         return dict(row) if row else None
+
+
+    def get_stock_position(self, sku: str, warehouse_id: str) -> dict | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """SELECT snapshot_id, sku, warehouse_id, on_hand, reserved,
+                        confirmed_inbound, captured_at
+                FROM inventory_snapshots
+                WHERE sku = ? AND warehouse_id = ?
+                ORDER BY captured_at DESC
+                LIMIT 1""",
+                (sku, warehouse_id),
+            ).fetchone()
+        return dict(row) if row else None
+
