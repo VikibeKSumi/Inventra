@@ -12,7 +12,8 @@ from schemas.tool_schemas import (
     ToolResult, EvidenceRef,
     GetProductInput, ProductRecord, GetStockPositionInput, InventorySnapshot,
     GetSalesVelocityInput, VelocityRecord, CalculateStockRiskInput, RiskAssessment,
-    GetPolicyGuidanceInput, PolicyGuidance, GetVendorOffersInput, VendorOffer
+    GetPolicyGuidanceInput, PolicyGuidance, GetVendorOffersInput, VendorOffer,
+    GetVendorPerformanceInput, VendorPerformance
 )
 
 
@@ -299,3 +300,42 @@ class CapabilityService:
             message=f"{len(offers)} valid offer(s) for '{request.sku}' ({len(rows) - len(valid_rows)} expired excluded).",
             evidence=evidence,
         )
+
+
+
+    def get_vendor_performance(self, request: GetVendorPerformanceInput) -> ToolResult[list[VendorPerformance]]:
+        now = self.clock.now()
+        rows = self.repository.get_vendor_performance(request.vendor_ids)
+
+        if not rows:
+            return self._fail("NOT_FOUND", "No performance records for the requested vendors.")
+
+        performances = [
+            VendorPerformance(
+                vendor_id=r["vendor_id"],
+                active=r["active"],
+                on_time_rate=Decimal(str(r["on_time_rate"])),
+                fill_rate=Decimal(str(r["fill_rate"])),
+                quality_score=Decimal(str(r["quality_score"])),
+            )
+            for r in rows
+        ]
+
+        evidence = (
+            EvidenceRef(
+                source="vendors",
+                record_ids=[r["vendor_id"] for r in rows],
+                observed_at=None,
+                retrieved_at=now,
+                fingerprint=self._fingerprint(rows),
+            ),
+        )
+
+        found = {r["vendor_id"] for r in rows}
+        missing = [v for v in request.vendor_ids if v not in found]
+        msg = f"Performance for {len(rows)} vendor(s)."
+        if missing:
+            msg += f" No record for: {', '.join(missing)}."
+
+        return ToolResult(success=True, result_code="OK", payload=performances,
+                        message=msg, evidence=evidence)
