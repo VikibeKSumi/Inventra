@@ -2,7 +2,8 @@
 from langchain_core.tools import tool
 from capabilities.capabilities import CapabilityService
 from schemas.tool_schemas import (
-    GetProductInput, GetStockPositionInput, GetSalesVelocityInput
+    GetProductInput, GetStockPositionInput, GetSalesVelocityInput,
+    GetPolicyGuidanceInput
 )
 
 
@@ -63,8 +64,28 @@ def build_tools(service: CapabilityService,):
             )
         ).model_dump(mode="json")
 
-    
 
     
-    tools_list = [get_product, get_stock_position, get_sales_velocity]
+    @tool(args_schema=GetPolicyGuidanceInput)
+    def get_policy_guidance(sku, warehouse_id, target_cover_days):
+        """Retrieve the company replenishment policy the proposal must follow.
+
+        Use this before recommending a purchase, to ground the proposal in policy
+        (reliability bar, target cover, buying rules). Returns the guidance to read
+        and comply with — you do not enforce thresholds yourself; the tools do.
+
+        Returns a ToolResult with:
+        - OK: policy guidance (summary, full_text, source_path, policy_version).
+        - NOT_FOUND: the policy document is missing.
+        - INVALID_DATA: the policy is malformed (missing version/summary header).
+        """
+        return service.get_policy_guidance(
+            request=GetPolicyGuidanceInput(
+                sku=sku, warehouse_id=warehouse_id, target_cover_days=target_cover_days
+            )
+        ).model_dump(mode="json")
+
+    tools_list = [
+        get_product, get_stock_position, get_sales_velocity,
+        get_policy_guidance]
     return tools_list
