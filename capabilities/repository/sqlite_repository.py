@@ -53,3 +53,15 @@ class SQLiteRepository:
                 (sku,),
             ).fetchall()
         return [dict(r) for r in rows]
+
+    def get_vendor_performance(self, vendor_ids: list[str]) -> list[dict]:
+        if not vendor_ids:
+            return []
+        placeholders = ",".join("?" for _ in vendor_ids)
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""SELECT vendor_id, active, on_time_rate, fill_rate, quality_score
+                    FROM vendors WHERE vendor_id IN ({placeholders})""",
+                tuple(vendor_ids),
+            ).fetchall()
+        return [dict(r) for r in rows]
