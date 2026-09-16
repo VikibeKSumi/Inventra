@@ -3,14 +3,14 @@ from langchain_core.tools import tool
 from capabilities.capabilities import CapabilityService
 from schemas.tool_schemas import (
     GetProductInput, GetStockPositionInput, GetSalesVelocityInput,
-    GetPolicyGuidanceInput, GetVendorPerformanceInput
+    CalculateStockRiskInput, GetPolicyGuidanceInput, GetVendorPerformanceInput
 )
 
 
 def build_tools(service: CapabilityService,):
 
     @tool(args_schema=GetProductInput)
-    def get_product(sku):
+    def get_product(sku) -> dict:
         """Resolve a single product by its exact SKU.
         Use this to confirm a product exists and is active before assessing stock or
         replenishment. Takes an exact SKU (no fuzzy/name search).
@@ -24,7 +24,7 @@ def build_tools(service: CapabilityService,):
         
 
     @tool(args_schema=GetStockPositionInput)
-    def get_stock_position(sku, warehouse_id):
+    def get_stock_position(sku, warehouse_id) -> dict:
         """Get the latest inventory snapshot for a SKU in a specific warehouse.
 
         Use this to find how much stock is on hand before assessing risk or sizing a
@@ -45,7 +45,7 @@ def build_tools(service: CapabilityService,):
 
 
     @tool(args_schema=GetSalesVelocityInput)                     
-    def get_sales_velocity(sku, warehouse_id, lookback_days=30): 
+    def get_sales_velocity(sku, warehouse_id, lookback_days=30) -> dict:
         """Measure sales velocity (average daily units) for a SKU in a warehouse.
 
         Use this to learn how fast an item sells before assessing stock risk or sizing
@@ -64,9 +64,28 @@ def build_tools(service: CapabilityService,):
             )
         ).model_dump(mode="json")
 
-    
+
+    @tool(args_schema=CalculateStockRiskInput)
+    def calculate_stock_risk(sku, warehouse_id) -> dict:
+        """Assess stock-out risk for a SKU in a warehouse.
+
+        Combines current stock and sales velocity into a risk verdict: days of cover,
+        projected stockout date, and at_risk vs healthy. Gathers the evidence itself.
+
+        Returns a ToolResult with:
+        - OK: a risk assessment (available_now, average_daily_units, days_of_cover,
+        projected_stockout_at, risk_status).
+        - NOT_FOUND: product or stock snapshot missing.
+        - DATA_STALE: snapshot older than the freshness limit.
+        - INSUFFICIENT_HISTORY: not enough sales history to trust the rate.
+        """
+        return service.calculate_stock_risk(
+            request=CalculateStockRiskInput(sku=sku, warehouse_id=warehouse_id)
+        ).model_dump(mode="json")
+
+
     @tool(args_schema=GetPolicyGuidanceInput)
-    def get_policy_guidance(sku, warehouse_id, target_cover_days):
+    def get_policy_guidance(sku, warehouse_id, target_cover_days) -> dict:
         """Retrieve the company replenishment policy the proposal must follow.
 
         Use this before recommending a purchase, to ground the proposal in policy
@@ -83,6 +102,8 @@ def build_tools(service: CapabilityService,):
                 sku=sku, warehouse_id=warehouse_id, target_cover_days=target_cover_days
             )
         ).model_dump(mode="json")
+
+    list_vendor_offers
 
     @tool(args_schema=GetVendorPerformanceInput)
     def get_vendor_performance(vendor_ids: list[str]) -> dict:
@@ -103,9 +124,10 @@ def build_tools(service: CapabilityService,):
             request=GetVendorPerformanceInput(vendor_ids=vendor_ids)
         ).model_dump(mode="json")
 
+
     tools_list = [
-        get_product, get_stock_position, get_sales_velocity,
-        get_policy_guidance, get_vendor_performance]
+        get_product, get_stock_position, get_sales_velocity, calculate_stock_risk
+        get_policy_guidance, list_vendor_offers, get_vendor_performance]
 
     
     return tools_list
