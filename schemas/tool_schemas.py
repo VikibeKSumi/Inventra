@@ -103,6 +103,17 @@ class RiskAssessment(OutputModel):
     risk_status: Literal["at_risk", "healthy"] = Field(description="Verdict: at_risk if days_of_cover <= risk threshold, else healthy.")
 
 
+# Tool 5:
+class GetPolicyGuidanceInput(InputModel):
+    sku: str = Field(description="Exact product SKU the guidance applies to.")
+    warehouse_id: str = Field(description="Warehouse the guidance applies to.")
+    target_cover_days: int = Field(description="Target days of cover for this request, used to contextualize the guidance.")
+
+class PolicyGuidance(OutputModel):
+    summary: str = Field(description="Short summary of the applicable buying policy for this SKU/warehouse.")
+    full_text: str = Field(description="The complete policy text the agent must follow when recommending.")
+    source_path: str = Field(description="Where the policy came from (e.g. policy.md path), for traceability.")
+    policy_version: str = Field(description="Version/identifier of the policy, so a proposal can cite which policy it followed.")
 
 
 
