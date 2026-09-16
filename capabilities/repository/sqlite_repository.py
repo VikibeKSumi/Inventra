@@ -44,3 +44,12 @@ class SQLiteRepository:
             ).fetchall()
             
         return [dict(r) for r in rows]
+
+    def get_vendor_offers(self, sku: str) -> list[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """SELECT offer_id, vendor_id, sku, unit_price, moq, lead_time_days, valid_until
+                FROM vendor_offers WHERE sku = ?""",
+                (sku,),
+            ).fetchall()
+        return [dict(r) for r in rows]
