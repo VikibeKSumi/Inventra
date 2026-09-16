@@ -3,7 +3,8 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Literal, Optional, Generic, TypeVar
 from datetime import datetime
-
+from decimal import Decimal
+from datetime import date
 
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
@@ -61,20 +62,33 @@ class ProductRecord(OutputModel):
 
 # Tool: get_stock_position
 class GetStockPositionInput(InputModel):
-    sku: str
-    warehouse_id: str
+    sku: str = Field(description="Exact product SKU to look up stock for.")
+    warehouse_id: str = Field(description="Warehouse whose stock position is requested (stock is per warehouse).")
+
 
 class InventorySnapshot(OutputModel):
-    on_hand: int
-    reserved: int
-    confirmed_inbound: int
-    available_now: int
-    captured_at: datetime
+    on_hand: int = Field(description="Units physically in stock.")
+    reserved: int = Field(description="Units already committed/allocated and therefore not available.")
+    confirmed_inbound: int = Field(description="Units expected to arrive; not yet available for use.")
+    available_now: int = Field(description="Units available right now, computed as on_hand - reserved.")
+    captured_at: datetime = Field(description="When this snapshot was recorded by the source system (used later for freshness).")
 
 
 
+# Tool: get_sales_velocity
+class GetSalesVelocityInput(InputModel):
+    sku: str = Field(description="Exact product SKU to measure sales for.")
+    warehouse_id: str = Field(description="Warehouse whose sales history is measured (sales are per warehouse).")
+    lookback_days: Literal[7, 14, 30] = Field(default=30, description="Calendar-day window to average sales over. Restricted to supported windows.")
 
 
+class VelocityRecord(OutputModel):
+    lookback_days: int = Field(description="Number of calendar days measured in the window (e.g. 7, 14, or 30).")
+    window_start: date = Field(description="First day of the measured window (inclusive).")
+    window_end: date = Field(description="Last day of the measured window (inclusive).")
+    units_sold: int = Field(description="Total units sold across the window.")
+    average_daily_units: Decimal = Field(description="Sales velocity: units_sold divided by lookback_days. Exact (Decimal) for downstream cover and reorder math.")
+    observed_days: int = Field(description="How many days in the window actually had a sales record; compared against the minimum-history rule to judge sufficiency.")
 
 
 
