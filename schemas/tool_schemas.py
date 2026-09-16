@@ -60,8 +60,9 @@ class ProductRecord(OutputModel):
 
 
 # Tool: get_stock_position
-class GetStockPosition(InputModel):
-    ...
+class GetStockPositionInput(InputModel):
+    sku: str
+    warehouse_id: str
 
 class InventorySnapshot(OutputModel):
     on_hand: int
