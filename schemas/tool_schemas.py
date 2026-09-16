@@ -155,6 +155,30 @@ class BudgetPosition(OutputModel):
     remaining_budget: Decimal = Field(description="Computed: budget_amount - spent_amount - committed_amount. What a new order must fit under.")
 
 
+# Tool 9:
+class BuildVendorOptionsInput(InputModel):
+    sku: str = Field(description="Exact SKU to build replenishment options for.")
+    warehouse_id: str = Field(description="Warehouse the order is for.")
+    target_cover_days: int = Field(description="Days of cover the order should restore (from arrival).")
+
+
+class VendorOption(OutputModel):
+    offer_id: str = Field(description="The offer this option is based on.")
+    vendor_id: str = Field(description="Vendor supplying it.")
+    unit_price: Decimal = Field(description="Price per unit.")
+    moq: int = Field(description="Vendor's minimum order quantity.")
+    lead_time_days: int = Field(description="Days from order to delivery.")
+
+    proposed_quantity: int = Field(description="Units to order: sized to restore target cover, raised to MOQ.")
+    total_cost: Decimal = Field(description="proposed_quantity * unit_price.")
+    expected_arrival: date = Field(description="Projected delivery date (order date + lead time).")
+
+    projected_stock_at_arrival: Decimal = Field(description="Estimated units left when the order arrives (can be <= 0).")
+    arrival_before_stockout: bool = Field(description="True if the delivery lands before stock runs out.")
+    within_budget: bool = Field(description="True if total_cost fits the remaining budget.")
+
+    eligible: bool = Field(description="True only if the offer is feasible on all counts (reliable vendor, valid, arrives in time, within budget).")
+    rejection_reasons: list[str] = Field(default_factory=list, description="Why an offer is not eligible (e.g. UNRELIABLE_VENDOR, ARRIVES_AFTER_STOCKOUT, OVER_BUDGET). Empty when eligible.")
 
 
 
