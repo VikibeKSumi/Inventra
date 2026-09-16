@@ -4,6 +4,9 @@ from decimal import Decimal
 from pathlib import Path
 import yaml
 from datetime import date
+from fractions import Fraction
+from math import ceil
+
 
 from config.config import Config
 from capabilities.repository.sqlite_repository import SQLiteRepository
@@ -14,7 +17,7 @@ from schemas.tool_schemas import (
     GetSalesVelocityInput, VelocityRecord, CalculateStockRiskInput, RiskAssessment,
     GetPolicyGuidanceInput, PolicyGuidance, GetVendorOffersInput, VendorOffer,
     GetVendorPerformanceInput, VendorPerformance, GetBudgetPositionInput, BudgetPosition,
-    
+    BuildVendorOptionsInput, VendorOption
 )
 
 
@@ -37,6 +40,9 @@ class CapabilityService:
         return ToolResult(success=False, result_code=result.result_code,
                       payload=None, message=result.message, evidence=result.evidence)
 
+    def _to_decimal(self, frac: Fraction) -> Decimal:
+            """Exact ratio -> Decimal for display; keeps repeating decimals from adding a unit."""
+            return Decimal(frac.numerator) / frac.denominator
 
     def get_product(self, request: GetProductInput) -> ToolResult[ProductRecord]:
         now = self.clock.now()
@@ -375,5 +381,85 @@ class CapabilityService:
         return ToolResult(
             success=True, result_code="OK", payload=payload,
             message=f"Budget for '{request.warehouse_id}' ({month}): {remaining} remaining.",
+            evidence=evidence,
+        )
+
+
+    def build_vendor_options(self, request: BuildVendorOptionsInput) -> ToolResult[list[VendorOption]]:
+        now = self.clock.now()
+
+        # 1. gather the inputs internally (propagate any upstream failure)
+        risk = self.calculate_stock_risk(CalculateStockRiskInput(sku=request.sku, warehouse_id=request.warehouse_id))
+        if not risk.success:
+            return self._propagate(risk)
+
+        offers = self.list_vendor_offers(GetVendorOffersInput(sku=request.sku))
+        if not offers.success:
+            return self._propagate(offers)
+
+        budget = self.get_budget_position(GetBudgetPositionInput(warehouse_id=request.warehouse_id))
+        if not budget.success:
+            return self._propagate(budget)
+
+        vendor_ids = [o.vendor_id for o in offers.payload]
+        perf = self.get_vendor_performance(GetVendorPerformanceInput(vendor_ids=vendor_ids))
+        perf_by_vendor = {p.vendor_id: p for p in (perf.payload or [])}
+
+        available = Fraction(risk.payload.available_now)
+        velocity = Fraction(risk.payload.average_daily_units)      # Decimal -> exact Fraction
+        remaining_budget = budget.payload.remaining_budget
+
+        options: list[VendorOption] = []
+        for o in offers.payload:
+            reasons: list[str] = []
+
+            # sizing (exact ratios; round only at the end)
+            stock_at_arrival = available - velocity * o.lead_time_days
+            required = max(Fraction(0), velocity * request.target_cover_days - stock_at_arrival)
+            quantity = max(ceil(required), o.moq) if required > 0 else 0
+            total_cost = Decimal(quantity) * o.unit_price
+            arrival = now.date() + timedelta(days=o.lead_time_days)
+
+            # feasibility checks
+            p = perf_by_vendor.get(o.vendor_id)
+            if p is None or not p.active:
+                reasons.append("INACTIVE_OR_UNKNOWN_VENDOR")
+            elif (p.on_time_rate < self.MIN_ON_TIME_RATE
+                or p.fill_rate < self.MIN_FILL_RATE
+                or p.quality_score < self.MIN_QUALITY_SCORE):
+                reasons.append("UNRELIABLE_VENDOR")
+
+            arrival_before_stockout = stock_at_arrival > 0
+            if not arrival_before_stockout:
+                reasons.append("ARRIVES_AFTER_STOCKOUT")
+
+            within_budget = total_cost <= remaining_budget
+            if not within_budget:
+                reasons.append("OVER_BUDGET")
+
+            if quantity == 0:
+                reasons.append("NO_REPLENISHMENT_NEEDED")
+
+            options.append(VendorOption(
+                offer_id=o.offer_id, vendor_id=o.vendor_id, unit_price=o.unit_price,
+                moq=o.moq, lead_time_days=o.lead_time_days,
+                proposed_quantity=quantity, total_cost=total_cost, expected_arrival=arrival,
+                projected_stock_at_arrival=self._to_decimal(stock_at_arrival),
+                arrival_before_stockout=arrival_before_stockout,
+                within_budget=within_budget,
+                eligible=not reasons,
+                rejection_reasons=reasons,
+            ))
+
+        # 2. decide the result code
+        eligible = [o for o in options if o.eligible]
+        only_budget = any(o.rejection_reasons == ["OVER_BUDGET"] for o in options)
+        code = "OK" if eligible else "OVER_BUDGET" if only_budget else "NO_VALID_OFFER"
+
+        evidence = risk.evidence + offers.evidence + perf.evidence + budget.evidence
+
+        return ToolResult(
+            success=bool(eligible), result_code=code, payload=options,
+            message=f"{len(eligible)} feasible option(s) of {len(options)} for '{request.sku}'.",
             evidence=evidence,
         )
