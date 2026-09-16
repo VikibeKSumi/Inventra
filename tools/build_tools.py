@@ -3,7 +3,7 @@ from langchain_core.tools import tool
 from capabilities.capabilities import CapabilityService
 from schemas.tool_schemas import (
     GetProductInput, GetStockPositionInput, GetSalesVelocityInput,
-    GetPolicyGuidanceInput
+    GetPolicyGuidanceInput, GetVendorPerformanceInput
 )
 
 
@@ -64,7 +64,6 @@ def build_tools(service: CapabilityService,):
             )
         ).model_dump(mode="json")
 
-
     
     @tool(args_schema=GetPolicyGuidanceInput)
     def get_policy_guidance(sku, warehouse_id, target_cover_days):
@@ -85,7 +84,28 @@ def build_tools(service: CapabilityService,):
             )
         ).model_dump(mode="json")
 
+    @tool(args_schema=GetVendorPerformanceInput)
+    def get_vendor_performance(vendor_ids: list[str]) -> dict:
+        """Get reliability metrics for a set of vendors.
+
+        Use this to check vendor performance (on-time rate, fill rate, quality) before
+        recommending an offer. Pass the vendor IDs from the offers you're considering.
+
+        Returns a ToolResult with:
+        - OK: a list of vendor performance records (on_time_rate, fill_rate, quality_score, active).
+        Vendors with no record are noted in the message.
+        - NOT_FOUND: none of the requested vendors have performance records.
+
+        Reports the scores only — it does not apply the reliability bar or exclude vendors;
+        that happens in build_vendor_options.
+        """
+        return service.get_vendor_performance(
+            request=GetVendorPerformanceInput(vendor_ids=vendor_ids)
+        ).model_dump(mode="json")
+
     tools_list = [
         get_product, get_stock_position, get_sales_velocity,
-        get_policy_guidance]
+        get_policy_guidance, get_vendor_performance]
+
+    
     return tools_list
