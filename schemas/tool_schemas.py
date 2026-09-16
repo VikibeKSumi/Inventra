@@ -6,6 +6,7 @@ from datetime import datetime
 from decimal import Decimal
 from datetime import date
 
+
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -17,7 +18,7 @@ class EvidenceRef(OutputModel):
     source: Literal[
         "products", "inventory_snapshots", "sales_daily",
         "vendors", "vendor_offers", "monthly_budgets",
-        "purchase_requests", "audit_events",
+        "purchase_requests", "audit_events", "policy", "INVALID_DATA"
     ] = Field(description="Which table/dataset this fact came from — identifies the kind of record read or written.")
     record_ids: list[str] = Field(description="The exact row identifiers read from the source (e.g. snapshot_id, sku, offer_id). A list because one read can span multiple rows, such as several days of sales.")
     observed_at: Optional[datetime] = Field(default=None, description="When the fact was captured in the source system (e.g. a snapshot's captured_at). Used for freshness checks. None when the record has no real-world capture time.")
@@ -115,6 +116,18 @@ class PolicyGuidance(OutputModel):
     source_path: str = Field(description="Where the policy came from (e.g. policy.md path), for traceability.")
     policy_version: str = Field(description="Version/identifier of the policy, so a proposal can cite which policy it followed.")
 
+
+# Tool 6:
+class GetVendorOffersInput(InputModel):
+    sku: str = Field(description="Exact SKU whose vendor offers are requested.")
+
+class VendorOffer(OutputModel):
+    offer_id: str = Field(description="Unique identifier of this vendor offer.")
+    vendor_id: str = Field(description="Vendor making the offer.")
+    unit_price: Decimal = Field(description="Price per unit under this offer.")
+    moq: int = Field(description="Minimum order quantity the vendor will accept.")
+    lead_time_days: int = Field(description="Days from order to delivery.")
+    valid_until: date = Field(description="Last day this offer is valid; expired offers are excluded.")
 
 
 #===========ENUMS==============
