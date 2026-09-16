@@ -65,3 +65,12 @@ class SQLiteRepository:
                 tuple(vendor_ids),
             ).fetchall()
         return [dict(r) for r in rows]
+
+    def get_budget_position(self, warehouse_id: str, month: str) -> dict | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """SELECT warehouse_id, month, budget_amount, spent_amount, committed_amount
+                FROM monthly_budgets WHERE warehouse_id = ? AND month = ?""",
+                (warehouse_id, month),
+            ).fetchone()
+        return dict(row) if row else None
