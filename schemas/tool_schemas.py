@@ -56,10 +56,19 @@ class ProductRecord(OutputModel):
     sku: str = Field(description="Unique product identifier (stock keeping unit), e.g. 'AC-001'.")
     name: str = Field(description="Human-readable product name.")
     category: str = Field(description="Product category/group used for organizing and warehouse-wide filtering.")
-    active: bool = Field(description="Whether the product is currently sold/stocked. False = discontinued and must not be restocked.")
+    active: bool = Field(description="Whether the product is currently sellable i.e sold/stocked. False = discontinued and must not be restocked.")
 
 
+# Tool: get_stock_position
+class GetStockPosition(InputModel):
+    ...
 
+class InventorySnapshot(OutputModel):
+    on_hand: int
+    reserved: int
+    confirmed_inbound: int
+    available_now: int
+    captured_at: datetime
 
 
 
