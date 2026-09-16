@@ -3,7 +3,8 @@ from langchain_core.tools import tool
 from capabilities.capabilities import CapabilityService
 from schemas.tool_schemas import (
     GetProductInput, GetStockPositionInput, GetSalesVelocityInput,
-    CalculateStockRiskInput, GetPolicyGuidanceInput, GetVendorPerformanceInput
+    CalculateStockRiskInput, GetPolicyGuidanceInput, GetVendorOffersInput, 
+    GetVendorPerformanceInput
 )
 
 
@@ -103,7 +104,26 @@ def build_tools(service: CapabilityService,):
             )
         ).model_dump(mode="json")
 
-    list_vendor_offers
+
+    @tool(args_schema=GetVendorOffersInput)
+    def list_vendor_offers(sku) -> dict:
+        """List currently valid vendor offers for a SKU.
+
+        Use this to see who can supply the item and on what terms (price, MOQ, lead time,
+        validity). Expired offers are excluded automatically.
+
+        Returns a ToolResult with:
+        - OK: a list of valid offers (offer_id, vendor_id, unit_price, moq, lead_time_days, valid_until).
+        May be empty if all offers are expired (the message notes how many were excluded).
+        - NOT_FOUND: the SKU has no vendor offers at all.
+
+        Lists offers only — it does not score vendors or size/price an order; that's
+        get_vendor_performance and build_vendor_options.
+        """
+        return service.list_vendor_offers(
+            request=GetVendorOffersInput(sku=sku)
+        ).model_dump(mode="json")
+
 
     @tool(args_schema=GetVendorPerformanceInput)
     def get_vendor_performance(vendor_ids: list[str]) -> dict:
@@ -126,7 +146,7 @@ def build_tools(service: CapabilityService,):
 
 
     tools_list = [
-        get_product, get_stock_position, get_sales_velocity, calculate_stock_risk
+        get_product, get_stock_position, get_sales_velocity, calculate_stock_risk,
         get_policy_guidance, list_vendor_offers, get_vendor_performance]
 
     
