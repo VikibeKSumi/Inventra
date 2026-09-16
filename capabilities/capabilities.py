@@ -1,12 +1,15 @@
 import hashlib, json
-from datetime import datetime
+from datetime import datetime, timedelta
+from decimal import Decimal
 
 from capabilities.repository.sqlite_repository import SQLiteRepository
 from capabilities.repository.clock import Clock
 from schemas.tool_schemas import (
     ToolResult, EvidenceRef,
-    GetProductInput, ProductRecord, GetStockPositionInput, InventorySnapshot
+    GetProductInput, ProductRecord, GetStockPositionInput, InventorySnapshot,
+    GetSalesVelocityInput, VelocityRecord
 )
+
 
 class CapabilityService:
     def __init__(self, repository: SQLiteRepository, clock: Clock):
@@ -97,4 +100,50 @@ class CapabilityService:
         )
 
 
-    
+
+
+    def get_sales_velocity(self, request: GetSalesVelocityInput) -> ToolResult[VelocityRecord]:
+        now = self.clock.now()
+        end = now.date()
+        start = end - timedelta(days=request.lookback_days)      # last N days (tune off-by-one to taste)
+
+        rows = self.repository.get_sales(
+            request.sku, request.warehouse_id, start.isoformat(), end.isoformat()
+        )
+
+        observed_days = len({r["sale_date"] for r in rows})     # distinct days that had a record
+        units_sold = sum(r["units_sold"] for r in rows)
+
+        evidence = (
+            EvidenceRef(
+                source="sales_daily",
+                record_ids=[r["sale_date"] for r in rows],       # no sale_id column; use the dates
+                observed_at=None,                                # sales rows have no single capture time
+                retrieved_at=now,
+                fingerprint=self._fingerprint(rows),
+            ),
+        )
+
+        # sufficiency gate
+        if observed_days < self.config.min_days_history:
+            return ToolResult(
+                success=False, result_code="INSUFFICIENT_HISTORY", payload=None,
+                message=f"Only {observed_days} days of sales history; need at least {self.config.min_days_history}.",
+                evidence=evidence,
+            )
+
+        average_daily_units = Decimal(units_sold) / request.lookback_days   # missing days count as 0
+
+        payload = VelocityRecord(
+            lookback_days=request.lookback_days,
+            window_start=start,
+            window_end=end,
+            units_sold=units_sold,
+            average_daily_units=average_daily_units,
+            observed_days=observed_days,
+        )
+        return ToolResult(
+            success=True, result_code="OK", payload=payload,
+            message=f"Sales velocity for '{request.sku}' over {request.lookback_days} days.",
+            evidence=evidence,
+        )
