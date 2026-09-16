@@ -48,7 +48,7 @@ class ToolResult(BaseModel, Generic[T]):
 
 
 
-# Tool: get_product
+# Tool 1: get_product
 class GetProductInput(InputModel):
     sku: str = Field(description="Unique product identifier (stock keeping unit), e.g. 'AC-001'.")
 
@@ -60,7 +60,7 @@ class ProductRecord(OutputModel):
     active: bool = Field(description="Whether the product is currently sellable i.e sold/stocked. False = discontinued and must not be restocked.")
 
 
-# Tool: get_stock_position
+# Tool 2: get_stock_position
 class GetStockPositionInput(InputModel):
     sku: str = Field(description="Exact product SKU to look up stock for.")
     warehouse_id: str = Field(description="Warehouse whose stock position is requested (stock is per warehouse).")
@@ -75,7 +75,7 @@ class InventorySnapshot(OutputModel):
 
 
 
-# Tool: get_sales_velocity
+# Tool 3: get_sales_velocity
 class GetSalesVelocityInput(InputModel):
     sku: str = Field(description="Exact product SKU to measure sales for.")
     warehouse_id: str = Field(description="Warehouse whose sales history is measured (sales are per warehouse).")
@@ -90,7 +90,17 @@ class VelocityRecord(OutputModel):
     average_daily_units: Decimal = Field(description="Sales velocity: units_sold divided by lookback_days. Exact (Decimal) for downstream cover and reorder math.")
     observed_days: int = Field(description="How many days in the window actually had a sales record; compared against the minimum-history rule to judge sufficiency.")
 
+# Tool 4: 
+class CalculateStockRiskInput(InputModel):
+    sku: str = Field(description="Exact product SKU.")
+    warehouse_id: str = Field(description="Warehouse to assess.")
 
+class RiskAssessment(OutputModel):
+    available_now: int = Field(description="Units available now (on_hand - reserved).")
+    average_daily_units: Decimal = Field(description="Sales velocity used for the calc.")
+    days_of_cover: Optional[Decimal] = Field(default=None, description="Days stock will last (available / velocity). None when there's no observed demand.")
+    projected_stockout_at: Optional[datetime] = Field(default=None, description="Projected date stock runs out. None when no demand.")
+    risk_status: Literal["at_risk", "healthy"] = Field(description="Verdict: at_risk if days_of_cover <= risk threshold, else healthy.")
 
 
 
