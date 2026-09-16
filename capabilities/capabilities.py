@@ -8,15 +8,15 @@ from capabilities.repository.clock import Clock
 from schemas.tool_schemas import (
     ToolResult, EvidenceRef,
     GetProductInput, ProductRecord, GetStockPositionInput, InventorySnapshot,
-    GetSalesVelocityInput, VelocityRecord
+    GetSalesVelocityInput, VelocityRecord, CalculateStockRiskInput, RiskAssessment
 )
 
 
 class CapabilityService:
     def __init__(self, repository: SQLiteRepository, clock: Clock, config: Config):
-        self.repository = repository      # your DB access object
-        self.clock = clock                # injected clock (no datetime.now())
-        self.config = config
+        self.repository = repository     
+        self.clock = clock               
+        self.MIN_DAYS_HISTORY = config.min_days_history
 
     def _fingerprint(self, data) -> str:
         return hashlib.sha256(
@@ -102,8 +102,6 @@ class CapabilityService:
         )
 
 
-
-
     def get_sales_velocity(self, request: GetSalesVelocityInput) -> ToolResult[VelocityRecord]:
         now = self.clock.now()
         end = now.date()
@@ -127,7 +125,7 @@ class CapabilityService:
         )
 
         # sufficiency gate
-        if observed_days < self.config.min_days_history:
+        if observed_days < self.MIN_DAYS_HISTORY:
             return ToolResult(
                 success=False, result_code="INSUFFICIENT_HISTORY", payload=None,
                 message=f"Only {observed_days} days of sales history; need at least {self.config.min_days_history}.",
@@ -149,5 +147,46 @@ class CapabilityService:
             message=f"Sales velocity for '{request.sku}' over {request.lookback_days} days.",
             evidence=evidence,
         )
+
+
+ 
+    def calculate_stock_risk(self, request: CalculateStockRiskInput) -> ToolResult[RiskAssessment]:
+        now = self.clock.now()
+
+        stock = self.get_stock_position(GetStockPositionInput(sku=request.sku, warehouse_id=request.warehouse_id))
+        if not stock.success:
+            return stock                                   # NOT_FOUND propagates
+        snap = stock.payload
+
+        # freshness gate
+        age_hours = (now - snap.captured_at).total_seconds() / 3600
+        if age_hours > self.STALE_THRESHOLD_HOURS:
+            return ToolResult(success=False, result_code="DATA_STALE", payload=None,
+                            message=f"Snapshot is {age_hours:.0f}h old (limit {self.STALE_THRESHOLD_HOURS}h).",
+                            evidence=stock.evidence)
+
+        vel = self.get_sales_velocity(GetSalesVelocityInput(
+            sku=request.sku, warehouse_id=request.warehouse_id, lookback_days=self.VELOCITY_WINDOW_DAYS))
+        if not vel.success:
+            return vel                                     # INSUFFICIENT_HISTORY propagates
+        v = vel.payload
+
+        available = snap.available_now
+        avg = v.average_daily_units
+
+        if avg == 0:                                       # no demand → never runs out
+            days_of_cover, stockout, status = None, None, "healthy"
+        else:
+            days_of_cover = Decimal(available) / avg
+            stockout = now + timedelta(days=float(days_of_cover))
+            status = "at_risk" if days_of_cover <= self.RISK_THRESHOLD_DAYS else "healthy"
+
+        payload = RiskAssessment(
+            available_now=available, average_daily_units=avg,
+            days_of_cover=days_of_cover, projected_stockout_at=stockout, risk_status=status,
+        )
+        return ToolResult(success=True, result_code="OK", payload=payload,
+                        message=f"Risk assessed for '{request.sku}': {status}.",
+                        evidence=stock.evidence + vel.evidence)   # combine both sources
 
 
