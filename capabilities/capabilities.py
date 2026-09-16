@@ -2,6 +2,7 @@ import hashlib, json
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+from config.config import Config
 from capabilities.repository.sqlite_repository import SQLiteRepository
 from capabilities.repository.clock import Clock
 from schemas.tool_schemas import (
@@ -12,9 +13,10 @@ from schemas.tool_schemas import (
 
 
 class CapabilityService:
-    def __init__(self, repository: SQLiteRepository, clock: Clock):
+    def __init__(self, repository: SQLiteRepository, clock: Clock, config: Config):
         self.repository = repository      # your DB access object
         self.clock = clock                # injected clock (no datetime.now())
+        self.config = config
 
     def _fingerprint(self, data) -> str:
         return hashlib.sha256(
@@ -147,3 +149,5 @@ class CapabilityService:
             message=f"Sales velocity for '{request.sku}' over {request.lookback_days} days.",
             evidence=evidence,
         )
+
+
