@@ -26,6 +26,11 @@ class CapabilityService:
             json.dumps(data, sort_keys=True, default=str).encode()
         ).hexdigest()
 
+    def _propagate(self, result: ToolResult) -> ToolResult:
+        return ToolResult(success=False, result_code=result.result_code,
+                      payload=None, message=result.message, evidence=result.evidence)
+
+
     def get_product(self, request: GetProductInput) -> ToolResult[ProductRecord]:
         now = self.clock.now()
         row = self.repository.get_product(request.sku)          # dict row, or None
@@ -158,7 +163,7 @@ class CapabilityService:
 
         stock = self.get_stock_position(GetStockPositionInput(sku=request.sku, warehouse_id=request.warehouse_id))
         if not stock.success:
-            return stock                                   # NOT_FOUND propagates
+            return self._propagate(stock)
         snap = stock.payload
 
         # freshness gate
@@ -171,7 +176,7 @@ class CapabilityService:
         vel = self.get_sales_velocity(GetSalesVelocityInput(
             sku=request.sku, warehouse_id=request.warehouse_id, lookback_days=self.VELOCITY_WINDOW_DAYS))
         if not vel.success:
-            return vel                                     # INSUFFICIENT_HISTORY propagates
+            return self._propagate(vel)                                     # INSUFFICIENT_HISTORY propagates
         v = vel.payload
 
         available = snap.available_now
