@@ -130,6 +130,24 @@ class VendorOffer(OutputModel):
     valid_until: date = Field(description="Last day this offer is valid; expired offers are excluded.")
 
 
+# Tool 7:
+class GetVendorPerformanceInput(InputModel):
+    vendor_ids: list[str] = Field(description="Vendor IDs to fetch performance metrics for.")
+
+class VendorPerformance(OutputModel):
+    vendor_id: str = Field(description="The vendor these metrics belong to.")
+    active: bool = Field(description="Whether the vendor is currently active.")
+    on_time_rate: Decimal = Field(description="Fraction of orders delivered on time (0-1).")
+    fill_rate: Decimal = Field(description="Fraction of ordered quantity actually fulfilled (0-1).")
+    quality_score: Decimal = Field(description="Quality rating (0-1).")
+
+
+
+
+
+
+
+
 #===========ENUMS==============
 class ErrorCode(str, Enum):
     """Typed error codes returned by tools."""
