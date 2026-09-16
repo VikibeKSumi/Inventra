@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 import yaml
+from datetime import date
 
 from config.config import Config
 from capabilities.repository.sqlite_repository import SQLiteRepository
@@ -11,7 +12,7 @@ from schemas.tool_schemas import (
     ToolResult, EvidenceRef,
     GetProductInput, ProductRecord, GetStockPositionInput, InventorySnapshot,
     GetSalesVelocityInput, VelocityRecord, CalculateStockRiskInput, RiskAssessment,
-    GetPolicyGuidanceInput, PolicyGuidance
+    GetPolicyGuidanceInput, PolicyGuidance, GetVendorOffersInput, VendorOffer
 )
 
 
@@ -255,3 +256,46 @@ class CapabilityService:
         )
 
 
+
+
+    def list_vendor_offers(self, request: GetVendorOffersInput) -> ToolResult[list[VendorOffer]]:
+        now = self.clock.now()
+        rows = self.repository.get_vendor_offers(request.sku)
+
+        # no offers at all for this SKU
+        if not rows:
+            return ToolResult(
+                success=False, result_code="NOT_FOUND", payload=None,
+                message=f"No vendor offers for SKU '{request.sku}'.", evidence=(),
+            )
+
+        # keep only currently-valid (non-expired) offers
+        valid_rows = [r for r in rows if date.fromisoformat(r["valid_until"]) >= now.date()]
+
+        offers = [
+            VendorOffer(
+                offer_id=r["offer_id"],
+                vendor_id=r["vendor_id"],
+                unit_price=Decimal(str(r["unit_price"])),
+                moq=r["moq"],
+                lead_time_days=r["lead_time_days"],
+                valid_until=date.fromisoformat(r["valid_until"]),
+            )
+            for r in valid_rows
+        ]
+
+        evidence = (
+            EvidenceRef(
+                source="vendor_offers",
+                record_ids=[r["offer_id"] for r in valid_rows],
+                observed_at=None,
+                retrieved_at=now,
+                fingerprint=self._fingerprint(valid_rows),
+            ),
+        )
+
+        return ToolResult(
+            success=True, result_code="OK", payload=offers,
+            message=f"{len(offers)} valid offer(s) for '{request.sku}' ({len(rows) - len(valid_rows)} expired excluded).",
+            evidence=evidence,
+        )
