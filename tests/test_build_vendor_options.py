@@ -128,3 +128,25 @@ def test_option_unknown_vendor():
     assert result.result_code == "NO_VALID_OFFER"
     o = result.payload[0]
     assert o.rejection_reasons == ["INACTIVE_OR_UNKNOWN_VENDOR"]
+
+
+def test_propagates_no_offers():
+    class R(_FakeRepo):
+        def get_vendor_offers(self, sku):
+            return []                                  # SKU has no offers
+    result = _service(R(on_hand=40, avg=3, offer=None, perf=[RELIABLE])).build_vendor_options(_req())
+    assert result.success is False
+    assert result.result_code == "NOT_FOUND"          # propagated from list_vendor_offers
+    assert result.payload is None
+
+
+def test_propagates_no_budget():
+    class R(_FakeRepo):
+        def get_budget_position(self, warehouse_id, month):
+            return None                                # no budget row for the warehouse
+    offer = {"offer_id": "O", "vendor_id": "V-FAST", "unit_price": 10.0,
+             "moq": 5, "lead_time_days": 2, "valid_until": "2026-09-29 08:00:00.000000"}
+    result = _service(R(on_hand=40, avg=3, offer=offer, perf=[RELIABLE])).build_vendor_options(_req())
+    assert result.success is False
+    assert result.result_code == "NOT_FOUND"          # propagated from get_budget_position
+    assert result.payload is None
