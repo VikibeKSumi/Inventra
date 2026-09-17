@@ -8,7 +8,7 @@ from fractions import Fraction
 from math import ceil
 
 
-from config.config import Config
+from config.config import DeterministicConfig
 from capabilities.repository.sqlite_repository import SQLiteRepository
 from capabilities.repository.clock import Clock
 from schemas.tool_schemas import (
@@ -22,7 +22,7 @@ from schemas.tool_schemas import (
 
 
 class CapabilityService:
-    def __init__(self, repository: SQLiteRepository, clock: Clock, config: Config):
+    def __init__(self, repository: SQLiteRepository, clock: Clock, config: DeterministicConfig):
         self.repository = repository     
         self.clock = clock               
         self.MIN_DAYS_HISTORY = config.min_days_history
@@ -463,3 +463,4 @@ class CapabilityService:
             message=f"{len(eligible)} feasible option(s) of {len(options)} for '{request.sku}'.",
             evidence=evidence,
         )
+
