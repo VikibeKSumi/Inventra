@@ -1,5 +1,5 @@
 import hashlib, json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 import yaml
@@ -94,7 +94,7 @@ class CapabilityService:
                 evidence=(),
             )
 
-        captured_at = datetime.fromisoformat(row["captured_at"])   # DB stores ISO string
+        captured_at = datetime.fromisoformat(row["captured_at"]).replace(tzinfo=timezone.utc)  # DB stores naive UTC
         available_now = row["on_hand"] - row["reserved"]
 
         evidence = (
