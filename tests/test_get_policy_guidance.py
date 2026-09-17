@@ -52,3 +52,10 @@ def test_policy_missing_keys(tmp_path):
     result = _service(p).get_policy_guidance(REQ)
     assert result.success is False
     assert result.result_code == "INVALID_DATA"
+
+def test_policy_malformed_yaml(tmp_path):
+    p = tmp_path / "policy.md"
+    p.write_text("---\nversion: [unclosed\n---\nBody", encoding="utf-8")  # invalid YAML
+    result = _service(p).get_policy_guidance(REQ)
+    assert result.success is False
+    assert result.result_code == "INVALID_DATA"
