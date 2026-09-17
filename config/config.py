@@ -31,6 +31,6 @@ class DeterministicConfig(BaseModel):
 
 
     #path
-    db_path: str = Field(default="data/inventra_db.db", descriptoin="Path to the Inventra SQLite database")
+    db_path: str = Field(default="data/inventra.db", description="Path to the Inventra SQLite database")
 
 config = DeterministicConfig()
