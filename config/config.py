@@ -29,4 +29,8 @@ class DeterministicConfig(BaseModel):
     # policy source
     policy_path: str = Field(default="data/policy.md", description="Path to the policy document.")
 
+
+    #path
+    db_path: str = Field(default="data/inventra_db.db", descriptoin="Path to the Inventra SQLite database")
+
 config = DeterministicConfig()
