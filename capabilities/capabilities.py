@@ -274,7 +274,7 @@ class CapabilityService:
             )
 
         # keep only currently-valid (non-expired) offers
-        valid_rows = [r for r in rows if date.fromisoformat(r["valid_until"]) >= now.date()]
+        valid_rows = [r for r in rows if datetime.fromisoformat(r["valid_until"]).date()  >= now.date()]
 
         offers = [
             VendorOffer(
@@ -283,7 +283,7 @@ class CapabilityService:
                 unit_price=Decimal(str(r["unit_price"])),
                 moq=r["moq"],
                 lead_time_days=r["lead_time_days"],
-                valid_until=date.fromisoformat(r["valid_until"]),
+                valid_until=datetime.fromisoformat(r["valid_until"]).date()
             )
             for r in valid_rows
         ]
