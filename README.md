@@ -33,6 +33,8 @@ If evidence is stale, missing, insufficient, or no vendor is feasible, the case 
 # Stack
 Python · LangGraph · Pydantic · SQLite
 
+# Features
+- 
 
 # Graph Worflow
 ```mermaid

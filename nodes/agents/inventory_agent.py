@@ -28,13 +28,13 @@ class Inventory_agent():
     def call_agent(self, state: InventraState):
 
         view = self.get_view(state)
-        request_query = ""
+        request = state["instruction"]
 
         messages = [
             SystemMessage(content=INVENTORY_AGENT_SYSTEM_PROMPT),
             HumanMessage(content=
                          f"CONTEXT: \n {view}\n\n"
-                         f"REQUEST QUERY: {request_query}")
+                         f"Request Query: {request}")
         ]
         response = self.llm_with_tools.invoke(input=messages)
         messages.append(response)
