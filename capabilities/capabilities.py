@@ -148,7 +148,7 @@ class CapabilityService:
         if observed_days < self.MIN_DAYS_HISTORY:
             return ToolResult(
                 success=False, result_code="INSUFFICIENT_HISTORY", payload=None,
-                message=f"Only {observed_days} days of sales history; need at least {self.config.min_days_history}.",
+                message=f"Only {observed_days} days of sales history; need at least {self.MIN_DAYS_HISTORY}.",
                 evidence=evidence,
             )
 
