@@ -18,7 +18,7 @@ class EvidenceRef(OutputModel):
     source: Literal[
         "products", "inventory_snapshots", "sales_daily",
         "vendors", "vendor_offers", "monthly_budgets",
-        "purchase_requests", "audit_events", "policy", "INVALID_DATA"
+        "purchase_requests", "audit_events", "policy"
     ] = Field(description="Which table/dataset this fact came from — identifies the kind of record read or written.")
     record_ids: list[str] = Field(description="The exact row identifiers read from the source (e.g. snapshot_id, sku, offer_id). A list because one read can span multiple rows, such as several days of sales.")
     observed_at: Optional[datetime] = Field(default=None, description="When the fact was captured in the source system (e.g. a snapshot's captured_at). Used for freshness checks. None when the record has no real-world capture time.")
@@ -40,6 +40,7 @@ class ToolResult(BaseModel, Generic[T]):
         "APPROVAL_REQUIRED",
         "DATA_CHANGED",
         "ALREADY_EXISTS",
+        "INVALID_DATA",
         "WRITE_FAILED",
         "INACTIVE"
     ] = Field(description="Machine-readable outcome code from a fixed set. Callers and routing branch on this; it names exactly what happened (success or the specific failure).")
