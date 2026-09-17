@@ -238,7 +238,14 @@ class CapabilityService:
                 message="Policy document is missing its version/summary header.",
                 evidence=(),
             )
-        meta = yaml.safe_load(parts[1]) or {}
+        try:
+            meta = yaml.safe_load(parts[1]) or {}
+        except yaml.YAMLError:
+            return ToolResult(
+                success=False, result_code="INVALID_DATA", payload=None,
+                message="Policy header is not valid YAML.",
+                evidence=(),
+            )
         body = parts[2].strip()
 
         if "version" not in meta or "summary" not in meta:
