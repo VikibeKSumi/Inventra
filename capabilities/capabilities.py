@@ -44,6 +44,12 @@ class CapabilityService:
             """Exact ratio -> Decimal for display; keeps repeating decimals from adding a unit."""
             return Decimal(frac.numerator) / frac.denominator
 
+    
+    def _fail(self, code, message, evidence=()):
+        return ToolResult(success=False, result_code=code, payload=None,
+                        message=message, evidence=evidence)
+
+
     def get_product(self, request: GetProductInput) -> ToolResult[ProductRecord]:
         now = self.clock.now()
         row = self.repository.get_product(request.sku)          # dict row, or None
