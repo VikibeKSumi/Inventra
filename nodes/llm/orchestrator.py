@@ -27,7 +27,8 @@ class Orchestrator():
             "sku": response.sku,
             "warehouse_id": response.warehouse_id,
             "target_cover_days": response.target_cover_days,
-            "strategy_hint": response.strategy_hint
+            "strategy_hint": response.strategy_hint,
+            "decline_reason": response.decline_reason
         }
 
 
@@ -39,7 +40,6 @@ if __name__ == "__main__":
     load_dotenv()
 
     llm = ChatOpenAI(
-        api_key=os.getenv("OPENAI_API_KEY"),
         model="gpt-5.4-mini"
     )
 
