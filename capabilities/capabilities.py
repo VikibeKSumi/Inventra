@@ -30,6 +30,9 @@ class CapabilityService:
         self.VELOCITY_WINDOW_DAYS = config.velocity_window_days
         self.RISK_THRESHOLD_DAYS = config.risk_threshold_days
         self.POLICY_PATH = config.policy_path
+        self.MIN_ON_TIME_RATE = config.min_on_time_rate
+        self.MIN_FILL_RATE = config.min_fill_rate
+        self.MIN_QUALITY_SCORE = config.min_quality_score
 
     def _fingerprint(self, data) -> str:
         return hashlib.sha256(
