@@ -17,7 +17,7 @@ class InventraState(TypedDict, total=False):
     trace_id: str
 
     # orchestrator / request
-    next_destination: Literal["inventory_agent", "stocker_agent", "needs_clarification"]
+    next_destination: Literal["inventory_agent", "replenishment_agent", "needs_clarification", "out_of_scope"]
     instruction: Optional[str]
     clarification_question: Optional[str]
     sku: Optional[str]

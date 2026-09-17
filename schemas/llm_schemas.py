@@ -3,10 +3,10 @@ from pydantic import BaseModel, Field
 
 
 class OrchestratorOutput(BaseModel):
-    next_destination: Literal["inventory_agent", "stocker_agent", "needs_clarification", "out_of_scope"] = Field(
+    next_destination: Literal["inventory_agent", "replenishment_agent", "needs_clarification", "out_of_scope"] = Field(
     description=(
         "Where to send the request: inventory_agent to check stock or risk; "
-        "stocker_agent to restock or revise a purchase proposal; "
+        "replenishment_agent to restock or revise a purchase proposal; "
         "needs_clarification if a required detail (SKU or warehouse) is missing or ambiguous; "
         "out_of_scope if the request is not a stock-risk check or a restock "
         "(e.g. creating or editing products, vendors or budgets, or unrelated questions)."
