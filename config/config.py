@@ -33,4 +33,8 @@ class DeterministicConfig(BaseModel):
     #path
     db_path: str = Field(default="data/inventra.db", description="Path to the Inventra SQLite database")
 
+
+    #inventory agent
+    max_tool_iterations: int = Field(default=6, description="Max tool-loop passes per agent call.")
+
 config = DeterministicConfig()
