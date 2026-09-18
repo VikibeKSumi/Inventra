@@ -16,7 +16,7 @@ AGENT_TOOL_ACCESS = {
     }, 
     "replenishment_agent": {
         "get_policy_guidance",
-        "list_vendors_offers",
+        "list_vendor_offers",
         "get_vendor_performance",
         "get_budget_position",
         "build_vendor_options",
