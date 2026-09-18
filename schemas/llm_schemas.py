@@ -18,3 +18,8 @@ class OrchestratorOutput(BaseModel):
     instruction: Optional[str] = Field(default=None, description="A concise, enriched task for the chosen agent. Set when routing to an agent.")
     clarification_question: Optional[str] = Field(default=None, description="The question to ask the user. Set only when next_destination is needs_clarification.")
     decline_reason: Optional[str] = Field(default=None, description="Short, polite explanation of why the request is out of scope. Set only when next_destination is out_of_scope.")
+
+
+class OfferSelection(BaseModel):
+    offer_id: str = Field(description="The offer_id of the ONE eligible option you chose. Must be copied exactly from an option marked eligible.")
+    rationale: str = Field(description="Why this option was chosen over the other eligible ones, in one or two sentences.")
