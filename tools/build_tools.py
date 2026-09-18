@@ -7,8 +7,23 @@ from schemas.tool_schemas import (
     GetVendorPerformanceInput, GetBudgetPositionInput, BuildVendorOptionsInput
 )
 
+AGENT_TOOL_ACCESS = {
+    "inventory_agent": {
+        "get_product",
+        "get_stock_position",
+        "get_sales_velocity",
+        "calculate_stock_risk",
+    }, 
+    "replenishment_agent": {
+        "get_policy_guidance",
+        "list_vendors_offers",
+        "get_vendor_performance",
+        "get_budget_position",
+        "build_vendor_options",
+    }
+}
 
-def build_tools(service: CapabilityService,):
+def build_tools(service: CapabilityService, agent: str):
 
     @tool(args_schema=GetProductInput)
     def get_product(sku) -> dict:
@@ -194,5 +209,15 @@ def build_tools(service: CapabilityService,):
         calculate_stock_risk, get_policy_guidance, list_vendor_offers,
         get_vendor_performance, get_budget_position, build_vendor_options]
 
+    if agent not in AGENT_TOOL_ACCESS:
+        raise ValueError(f"Unknown agent {agent}. Valid:{sorted(AGENT_TOOL_ACCESS)}")
+
+    tools_allowed = AGENT_TOOL_ACCESS[agent]
+    tools_granted = [tool for tool in tools_list if tool.name in tools_allowed]
+
+    if len(tools_granted) != len(tools_allowed):
+        missing = tools_allowed - {tool.name for tool in tools_granted}
+        raise ValueError(f"AGENT_TOOL_ACCESS[{agent}] names unknown tools: {sorted(missing)}")
     
-    return tools_list
+    
+    return tools_granted
