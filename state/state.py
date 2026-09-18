@@ -24,7 +24,8 @@ class InventraState(TypedDict, total=False):
     warehouse_id: Optional[str]
     target_cover_days: Optional[int]
     strategy_hint: Optional[str]
-
+    decline_reason: Optional[str]
+    
     # inventory agent
     inventory_status: Literal["at_risk", "healthy", "blocked", "needs_information"]
     inventory_explanation: str
