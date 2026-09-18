@@ -91,7 +91,7 @@ class InventoryAgent():
             status = "blocked"
             evidence = []
             if response.tool_calls:
-            seen = set()
+                seen = set()
                 local_messages, tool_results = self.run_tool_loop(local_messages=local_messages)
                 status = self.derive_status(tool_results=tool_results)
 
