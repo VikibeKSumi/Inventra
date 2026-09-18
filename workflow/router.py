@@ -38,7 +38,7 @@ def router_orchestrator(state: InventraState) -> str:
     return ORCHESTRATOR_ROUTES[next_destination]
 
 
-def router_inventory(state: InventraState) -> str:
+def router_inventory_agent(state: InventraState) -> str:
     inventory_status = state.get("inventory_status")
 
     if inventory_status not in INVENTORY_ROUTES:
@@ -47,7 +47,7 @@ def router_inventory(state: InventraState) -> str:
     return INVENTORY_ROUTES[inventory_status]
 
 
-def router_replenishment(state: InventraState) -> str:
+def router_replenishment_agent(state: InventraState) -> str:
     replenishment_status = state.get("replenishment_status")
 
     if replenishment_status not in REPLENISHMENT_ROUTES:
