@@ -34,7 +34,9 @@ class InventraGraph():
         self.router_orchestrator = router_orchestrator
         self.router_inventory_agent = router_inventory_agent
         self.router_replenishment_agent = router_replenishment_agent
-
+        self.checkpointer = InMemorySaver()
+        self.graph = None
+        
     def build_nodes(self):
         self.workflow.add_node("orchestrator_node", self.orchestrator)
         self.workflow.add_node("clarify_hitl_node", self.clarify_hitl)
@@ -74,13 +76,12 @@ class InventraGraph():
                 
         
     def compile_workflow(self):
-        return self.workflow.compile(checkpointer=InMemorySaver())
-    
+        self.graph = self.workflow.compile(checkpointer=self.checkpointer)
+        
 
     def build_graph(self):
         self.build_nodes()
         self.build_edges()
-        graph = self.compile_workflow()
+        self.compile_workflow()
 
-        return graph
-    
+        return self.graph
