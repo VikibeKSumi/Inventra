@@ -1,7 +1,7 @@
 
 from langchain_core.tools import tool
 from capabilities.capabilities import CapabilityService
-from schemas.tool_schemas import (
+from schemas.capability_schemas import (
     GetProductInput, GetStockPositionInput, GetSalesVelocityInput,
     CalculateStockRiskInput, GetPolicyGuidanceInput, GetVendorOffersInput, 
     GetVendorPerformanceInput, GetBudgetPositionInput, BuildVendorOptionsInput

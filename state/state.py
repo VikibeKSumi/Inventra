@@ -5,7 +5,7 @@ from typing import Annotated, Literal, Optional
 from typing_extensions import TypedDict
 
 from langgraph.graph.message import add_messages
-from schemas.tool_schemas import EvidenceRef
+from schemas.capability_schemas import EvidenceRef
 
 
 class InventraState(TypedDict, total=False):
