@@ -1,9 +1,7 @@
 
-
-
-from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import InMemorySaver
+
 
 from config.config import DeterministicConfig
 from state.state import InventraState
@@ -11,11 +9,13 @@ from capabilities.capabilities import CapabilityService
 from nodes.llm.orchestrator import Orchestrator
 from nodes.agents.inventory_agent import InventoryAgent
 from nodes.agents.replenishment_agent import ReplenishmentAgent
-from nodes.hitl.clarify_hitl import clarify_hitl
+from nodes.hitl.clarify_hitl import ClarifyHITL
+from nodes.hitl.approve_hitl import ApproveHITL
 from nodes.deterministic.out_of_scope import out_of_scope
+from nodes.deterministic.create_purchase_request import PurchaseRequest
 from workflow.router import (
     router_orchestrator, router_inventory_agent,
-    router_replenishment_agent
+    router_replenishment_agent, router_approve_hitl
 )
 
 
@@ -27,13 +27,17 @@ class InventraGraph():
      
         self.workflow = StateGraph(InventraState)
         self.orchestrator = Orchestrator(llm=llm).call_orchestrator
-        self.clarify_hitl = clarify_hitl
+        self.clarify_hitl = ClarifyHITL.call_hitl
         self.out_of_scope = out_of_scope
         self.inventory_agent = InventoryAgent(llm=llm, service=service, config=config).call_agent
         self.replenishment_agent = ReplenishmentAgent(llm=llm, service=service, config=config).call_agent
+        self.approve_hitl = ApproveHITL(clock=service.clock, config=config).call_hitl
+        self.create_purchase_request = PurchaseRequest(service=service).create_purchase_request
+
         self.router_orchestrator = router_orchestrator
         self.router_inventory_agent = router_inventory_agent
         self.router_replenishment_agent = router_replenishment_agent
+        self.router_approve_hitl = router_approve_hitl
         self.checkpointer = InMemorySaver()
         self.graph = None
         
@@ -43,8 +47,8 @@ class InventraGraph():
         self.workflow.add_node("out_of_scope_node", self.out_of_scope)
         self.workflow.add_node("inventory_agent_node", self.inventory_agent)
         self.workflow.add_node("replenishment_agent_node", self.replenishment_agent)
-
-
+        self.workflow.add_node("approve_hitl_node", self.approve_hitl)
+        self.workflow.add_node("create_purchase_request_node", self.create_purchase_request)
     def build_edges(self):
         self.workflow.add_edge(START, "orchestrator_node")
         self.workflow.add_conditional_edges(
@@ -68,12 +72,25 @@ class InventraGraph():
             "replenishment_agent_node",
             router_replenishment_agent,
             {
+                "approve_hitl_node": "approve_hitl_node",
                 END: END
             }
         )
         self.workflow.add_edge("clarify_hitl_node", "orchestrator_node")
         self.workflow.add_edge("out_of_scope_node", END)
-                
+
+        self.workflow.add_conditional_edges(
+            "approve_hitl_node",
+            router_approve_hitl,
+            {
+                "create_purchase_request_node": "create_purchase_request_node",
+                "replenishment_agent_node": "replenishment_agent_node",
+                END: END
+            }
+        )
+
+        self.workflow.add_edge("create_purchase_request_node", END)
+        
         
     def compile_workflow(self):
         self.graph = self.workflow.compile(checkpointer=self.checkpointer)
