@@ -22,15 +22,17 @@ class ReplenishmentAgent():
         self.tools_list = self.get_tool_list()
         self.llm_with_tools = llm.bind_tools(self.tools_list)
         self.MAX_TOOL_ITERATION = config.max_tool_iterations
+        self.TARGET_COVER_DAYS = config.target_cover_days
 
 
     def get_view(self, state: InventraState) -> dict[str, Any]:
-         return {
+        return {
             "sku": state.get("sku"),
             "warehouse_id": state.get("warehouse_id"),
-            "target_cover_days": state.get("target_cover_days"),
+            "target_cover_days": state.get("target_cover_days") or self.TARGET_COVER_DAYS,
             "strategy_hint": state.get("strategy_hint")
         }
+
 
     def get_tool_list(self) -> list[StructuredTool] :
         return build_tools(service=self.service, agent = self.agent)
