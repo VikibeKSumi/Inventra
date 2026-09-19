@@ -40,18 +40,18 @@ class InventraState(TypedDict, total=False):
     expected_arrival: date
     replenishment_proposal: str
 
-    # control
-    status: str
-    revision_count: int
-    retry_count: int
-    error_code: str
-
-    # human
+    # approval human
     approver: str
     decision: str
     comment: str
     proposal_revision: str
     approved_at: datetime
+    
+    # control
+    status: str
+    revision_count: int
+    retry_count: int
+    error_code: str
 
     # outcome
     purchase_request_id: str
