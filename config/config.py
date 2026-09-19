@@ -37,4 +37,6 @@ class DeterministicConfig(BaseModel):
     #inventory agent
     max_tool_iterations: int = Field(default=6, description="Max tool-loop passes per agent call.")
 
+    max_revision: int = Field(default=3, description="Max approver-requested revisions before the case is closed unresolved.")
+
 config = DeterministicConfig()
