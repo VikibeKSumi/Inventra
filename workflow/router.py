@@ -30,7 +30,7 @@ REPLENISHMENT_ROUTES = {
 
 APPROVE_HITL_ROUTES = {
     #decision : nodes
-    "approve": "validate_node",
+    "approve": "create_purchase_node",
     "revise": "replenishment_agent_node",
     "reject": END
 }
