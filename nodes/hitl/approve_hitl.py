@@ -13,7 +13,7 @@ class ApproveHITL():
         self.clock = clock
         self.MAX_REVISION = config.max_revision
 
-    def approve_hitl(self, state: InventraState):
+    def call_hitl(self, state: InventraState):
         revision_count = 0
         proposal = state.get("replenishment_proposal")
         details = {
