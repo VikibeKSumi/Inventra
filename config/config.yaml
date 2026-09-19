@@ -1,6 +1,0 @@
-
-database:
-  path: "data/inventra.db"
-
-sales:
-  stale_threshold_hours: 48
