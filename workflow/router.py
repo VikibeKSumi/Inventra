@@ -30,9 +30,10 @@ REPLENISHMENT_ROUTES = {
 
 APPROVE_HITL_ROUTES = {
     #decision : nodes
-    "approve": "create_purchase_node",
+    "approve": "create_purchase_request_node",
     "revise": "replenishment_agent_node",
-    "reject": END
+    "reject": END,
+    "max_revision_crossed": END
 }
 
 def router_orchestrator(state: InventraState) -> str:
