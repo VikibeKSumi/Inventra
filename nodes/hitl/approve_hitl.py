@@ -33,6 +33,9 @@ class ApproveHITL():
 
         approved_at = None
         decision = response.get("decision")
+        approver = response.get("approver")
+        if not approver: 
+            raise ValueError("Approver is needed. Please enter one.")
         if decision not in options:
             raise ValueError(f"Got wrong decision {decision!r}. Select from one of the following: approve, revise or reject")
         if decision == "approve":
@@ -40,7 +43,7 @@ class ApproveHITL():
         
         # command shape
         return {
-            "approver": response.get("approver"),
+            "approver": approver,
             "decision": decision,
             "comment": response.get("comment"),
             "proposal_revision": response.get("proposal_revision"),
