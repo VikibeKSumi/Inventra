@@ -3,9 +3,9 @@ from langchain_core.messages import AIMessage, HumanMessage
 from state.state import InventraState
 
 
-class ClarigyHITL():
+class ClarifyHITL():
         
-    def clarify_hitl(state: InventraState):
+    def call_hitl(state: InventraState):
 
         question = state.get("clarification_question")
         answer = interrupt({"question": question})
