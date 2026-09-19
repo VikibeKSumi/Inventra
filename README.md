@@ -47,28 +47,27 @@ graph TD;
 	__start__([<p>__start__</p>]):::first
 	orchestrator_node(orchestrator_node)
 	clarify_hitl_node(clarify_hitl_node)
+	out_of_scope_node(out_of_scope_node)
 	inventory_agent_node(inventory_agent_node)
 	replenishment_agent_node(replenishment_agent_node)
 	approve_hitl_node(approve_hitl_node)
-	validate_node(validate_node)
 	create_purchase_request_node(create_purchase_request_node)
 	__end__([<p>__end__</p>]):::last
 	__start__ --> orchestrator_node;
-	approve_hitl_node -. &nbsp;reject&nbsp; .-> __end__;
-	approve_hitl_node -. &nbsp;revise&nbsp; .-> replenishment_agent_node;
-	approve_hitl_node -. &nbsp;approved&nbsp; .-> validate_node;
-	clarify_hitl_node -.-> orchestrator_node;
+	approve_hitl_node -.-> __end__;
+	approve_hitl_node -.-> create_purchase_request_node;
+	approve_hitl_node -.-> replenishment_agent_node;
+	clarify_hitl_node --> orchestrator_node;
 	inventory_agent_node -.-> __end__;
 	inventory_agent_node -.-> replenishment_agent_node;
-	orchestrator_node -. &nbsp;human_clarify&nbsp; .-> clarify_hitl_node;
+	orchestrator_node -.-> clarify_hitl_node;
 	orchestrator_node -.-> inventory_agent_node;
+	orchestrator_node -.-> out_of_scope_node;
 	orchestrator_node -.-> replenishment_agent_node;
-	replenishment_agent_node -. &nbsp;blocked&nbsp; .-> __end__;
-	replenishment_agent_node -. &nbsp;human_approve&nbsp; .-> approve_hitl_node;
-	validate_node -.-> create_purchase_request_node;
-	validate_node -. &nbsp;re-validate&nbsp; .-> replenishment_agent_node;
+	replenishment_agent_node -.-> __end__;
+	replenishment_agent_node -.-> approve_hitl_node;
 	create_purchase_request_node --> __end__;
-	approve_hitl_node -. &nbsp;need_req_fields&nbsp; .-> approve_hitl_node;
+	out_of_scope_node --> __end__;
 	classDef default fill:#f2f0ff,line-height:1.2
 	classDef first fill-opacity:0
 	classDef last fill:#bfb6fc
