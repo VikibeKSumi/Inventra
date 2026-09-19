@@ -34,6 +34,7 @@ class ApproveHITL():
         approved_at = None
         decision = response.get("decision")
         approver = response.get("approver")
+        
         if not approver: 
             raise ValueError("Approver is needed. Please enter one.")
         if decision not in options:
