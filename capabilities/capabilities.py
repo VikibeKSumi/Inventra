@@ -1,4 +1,4 @@
-import hashlib, json
+import hashlib, json, sqlite3, uuid 
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -10,13 +10,13 @@ from math import ceil
 from config.config import DeterministicConfig
 from capabilities.repository.sqlite_repository import SQLiteRepository
 from capabilities.repository.clock import Clock
-from schemas.tool_schemas import (
+from schemas.capability_schemas import (
     ToolResult, EvidenceRef,
     GetProductInput, ProductRecord, GetStockPositionInput, InventorySnapshot,
     GetSalesVelocityInput, VelocityRecord, CalculateStockRiskInput, RiskAssessment,
     GetPolicyGuidanceInput, PolicyGuidance, GetVendorOffersInput, VendorOffer,
     GetVendorPerformanceInput, VendorPerformance, GetBudgetPositionInput, BudgetPosition,
-    BuildVendorOptionsInput, VendorOption
+    BuildVendorOptionsInput, VendorOption, PurchaseRequestInput, PurchaseRequestRecord
 )
 
 
@@ -479,3 +479,71 @@ class CapabilityService:
             evidence=evidence,
         )
 
+    def create_purchase_request(self, request: PurchaseRequestInput) -> ToolResult[PurchaseRequestRecord]:
+        """The system's only write. Idempotent: one approval can never create two orders."""
+        now = self.clock.now()
+        idempotency_key = ":".join([
+            request.case_id, request.sku, request.warehouse_id,
+            request.offer_id, str(request.quantity),
+        ])
+
+        def _record(row: dict) -> PurchaseRequestRecord:
+            return PurchaseRequestRecord(
+                request_id=row["request_id"], case_id=row["case_id"], sku=row["sku"],
+                warehouse_id=row["warehouse_id"], vendor_id=row["vendor_id"],
+                quantity=row["quantity"], unit_price=Decimal(str(row["unit_price"])),
+                total_cost=Decimal(str(row["total_cost"])), status=row["status"],
+                idempotency_key=row["idempotency_key"], approved_by=row["approved_by"],
+                approved_at=row["approved_at"],
+            )
+
+        def _evidence(row: dict) -> tuple[EvidenceRef, ...]:
+            return (EvidenceRef(
+                source="purchase_requests", record_ids=[row["request_id"]], observed_at=None,
+                retrieved_at=now, fingerprint=self._fingerprint(row),
+            ),)
+
+        # already written for this approval -> return it, don't order twice
+        existing = self.repository.get_purchase_request_by_key(idempotency_key)
+        if existing is not None:
+            return ToolResult(
+                success=True, result_code="ALREADY_EXISTS", payload=_record(existing),
+                message=f"Purchase request already exists for this approval ({existing['request_id']}).",
+                evidence=_evidence(existing),
+            )
+
+        row = {
+            "request_id": f"PR-{uuid.uuid4().hex[:12].upper()}",
+            "case_id": request.case_id,
+            "vendor_id": request.vendor_id,
+            "sku": request.sku,
+            "warehouse_id": request.warehouse_id,
+            "quantity": request.quantity,
+            "unit_price": float(request.unit_price),
+            "total_cost": float(request.total_cost),
+            "status": "PENDING",
+            "idempotency_key": idempotency_key,
+            "approved_by": request.approver,
+            "approved_at": request.approved_at.isoformat(),
+        }
+
+        try:
+            self.repository.create_purchase_request(row)
+        except sqlite3.IntegrityError:
+            # another run inserted it between our check and our insert
+            existing = self.repository.get_purchase_request_by_key(idempotency_key)
+            if existing is not None:
+                return ToolResult(
+                    success=True, result_code="ALREADY_EXISTS", payload=_record(existing),
+                    message=f"Purchase request already exists for this approval ({existing['request_id']}).",
+                    evidence=_evidence(existing),
+                )
+            return self._fail("WRITE_FAILED", "Purchase request could not be written.")
+        except sqlite3.Error as e:
+            return self._fail("WRITE_FAILED", f"Purchase request could not be written: {e}")
+
+        return ToolResult(
+            success=True, result_code="OK", payload=_record(row),
+            message=f"Purchase request {row['request_id']} created for '{request.sku}'.",
+            evidence=_evidence(row),
+        )
