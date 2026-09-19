@@ -74,3 +74,29 @@ class SQLiteRepository:
                 (warehouse_id, month),
             ).fetchone()
         return dict(row) if row else None
+
+
+    def get_purchase_request_by_key(self, idempotency_key: str) -> dict | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """SELECT request_id, case_id, vendor_id, sku, warehouse_id, quantity,
+                          unit_price, total_cost, status, idempotency_key, approved_by, approved_at
+                   FROM purchase_requests WHERE idempotency_key = ?""",
+                (idempotency_key,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def create_purchase_request(self, row: dict) -> None:
+        """Insert one purchase request. Raises sqlite3.IntegrityError if the key already exists."""
+        with self._connect() as conn:
+            conn.execute(
+                """INSERT INTO purchase_requests
+                       (request_id, case_id, vendor_id, sku, warehouse_id, quantity,
+                        unit_price, total_cost, status, idempotency_key, approved_by, approved_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    row["request_id"], row["case_id"], row["vendor_id"], row["sku"],
+                    row["warehouse_id"], row["quantity"], row["unit_price"], row["total_cost"],
+                    row["status"], row["idempotency_key"], row["approved_by"], row["approved_at"],
+                ),
+            )
