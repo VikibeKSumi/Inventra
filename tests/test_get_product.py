@@ -1,4 +1,4 @@
-from schemas.tool_schemas import GetProductInput
+from schemas.capability_schemas import GetProductInput
 from capabilities.capabilities import CapabilityService
 from capabilities.repository.clock import Clock
 from config.config import config

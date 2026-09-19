@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from schemas.tool_schemas import GetStockPositionInput
+from schemas.capability_schemas import GetStockPositionInput
 
 
 def test_get_stock_position_found(service):

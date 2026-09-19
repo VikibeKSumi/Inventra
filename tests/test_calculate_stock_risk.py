@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from schemas.tool_schemas import CalculateStockRiskInput
+from schemas.capability_schemas import CalculateStockRiskInput
 from datetime import datetime, timezone
 from capabilities.capabilities import CapabilityService
 from capabilities.repository.clock import Clock

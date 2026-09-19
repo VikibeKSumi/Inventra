@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from schemas.tool_schemas import GetSalesVelocityInput
+from schemas.capability_schemas import GetSalesVelocityInput
 
 
 def test_get_sales_velocity_ok(service):

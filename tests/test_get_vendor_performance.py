@@ -1,6 +1,6 @@
 
 from decimal import Decimal
-from schemas.tool_schemas import GetVendorPerformanceInput
+from schemas.capability_schemas import GetVendorPerformanceInput
 
 
 

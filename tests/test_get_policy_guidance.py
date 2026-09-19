@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from capabilities.capabilities import CapabilityService
 from capabilities.repository.clock import Clock
 from config.config import config
-from schemas.tool_schemas import GetPolicyGuidanceInput
+from schemas.capability_schemas import GetPolicyGuidanceInput
 
 REQ = GetPolicyGuidanceInput(sku="AC-001", warehouse_id="DEL-01", target_cover_days=14)
 

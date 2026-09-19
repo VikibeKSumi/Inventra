@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from schemas.tool_schemas import GetBudgetPositionInput
+from schemas.capability_schemas import GetBudgetPositionInput
 
 
 def test_budget_ok(service):

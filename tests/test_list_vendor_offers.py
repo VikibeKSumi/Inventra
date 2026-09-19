@@ -1,6 +1,6 @@
 # tests/test_list_vendor_offers.py
 from decimal import Decimal
-from schemas.tool_schemas import GetVendorOffersInput
+from schemas.capability_schemas import GetVendorOffersInput
 from datetime import datetime, timezone
 from capabilities.capabilities import CapabilityService
 from capabilities.repository.clock import Clock

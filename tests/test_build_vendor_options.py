@@ -1,7 +1,7 @@
 # tests/test_build_vendor_options.py
 from decimal import Decimal
 
-from schemas.tool_schemas import BuildVendorOptionsInput
+from schemas.capability_schemas import BuildVendorOptionsInput
 
 
 def test_options_ok(service):
