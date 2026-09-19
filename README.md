@@ -1,6 +1,6 @@
-# Inventra — Agentic Warehouse Stockout Resolution
+# Inventra - Agentic Warehouse Stockout Resolution
 
-Inventra is a multi-agent system that helps an inventory manager prevent avoidable stockouts. For a single SKU in a single warehouse, it investigates whether stock is at risk, prepares a grounded replenishment proposal, pauses for human approval, and safely creates a purchase request - all from evidence already sitting in the existing systems, never from guesswork.~
+Inventra is a multi-agent system that helps an inventory manager prevent avoidable stockouts. For a single SKU in a single warehouse, it investigates whether stock is at risk, prepares a grounded replenishment proposal, pauses for human approval, and safely creates a purchase request - all from evidence already sitting in the existing systems, never from guesswork.
 
 ## Features
 
