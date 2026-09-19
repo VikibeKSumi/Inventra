@@ -24,7 +24,7 @@ INVENTORY_ROUTES = {
 
 REPLENISHMENT_ROUTES = {
     # status : node name
-    "awaiting_approval": END,
+    "awaiting_approval": "approve_hitl_node",
     "blocked": END
 }
 
