@@ -8,7 +8,8 @@ class ClarifyHITL():
     def call_hitl(state: InventraState):
 
         question = state.get("clarification_question")
-        answer = interrupt({"question": question})
+        response = interrupt({"question": question})
+        answer = response["answer"]
 
         return {
             "messages": [
