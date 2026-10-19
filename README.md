@@ -5,13 +5,13 @@ Inventra is a multi-agent system that helps an inventory manager prevent avoidab
 ## Features
 
 - **Multi-agent system** - two specialist agents, each with a narrow, well-defined job.
-- **Orchestrator pattern** - an LLM router interprets the request and decides which agent handles it, what needs clarifying, and what is out of scope.
+- **Orchestrator pattern** - a centralized architecture pattern where an LLM router interprets the request and decides which agent handles it, what needs clarifying, and what is out of scope.
 - **Human-in-the-loop** - the graph pauses for a person whenever consent is required, and resumes from the same checkpoint.
 - **Tool calling** - agents gather evidence through typed tools instead of recalling facts.
 - **Tool access control** - a per-agent allowlist; each agent can call only the tools its role needs.
 - **Contained input/output schemas** - inputs reject anything not declared, outputs are frozen so no downstream step can alter a result.
 - **Centralized configuration** - every threshold and boundary lives in one frozen config object, never hardcoded in prompts or nodes.
-- **Testing** — every capability covered branch by branch, including the failure paths, with fakes forcing the cases the seed data can't reach.
+- **Testing** - every capability covered branch by branch, including the failure paths, with fakes forcing the cases the seed data can't reach.
 
 ## Tech stack
 
