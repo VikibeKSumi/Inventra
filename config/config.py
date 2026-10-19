@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 
-class DeterministicConfig(BaseModel):
+class InventraConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     # freshness
@@ -29,14 +29,14 @@ class DeterministicConfig(BaseModel):
     # policy source
     policy_path: str = Field(default="data/policy.md", description="Path to the policy document.")
 
-
     #path
     db_path: str = Field(default="data/inventra.db", description="Path to the Inventra SQLite database")
 
-
     #inventory agent
     max_tool_iterations: int = Field(default=6, description="Max tool-loop passes per agent call.")
-
     max_revision: int = Field(default=3, description="Max approver-requested revisions before the case is closed unresolved.")
 
-config = DeterministicConfig()
+    # llm
+    llm_model_name: str = Field(default="gpt-5.4-mini")
+    
+config = InventraConfig()

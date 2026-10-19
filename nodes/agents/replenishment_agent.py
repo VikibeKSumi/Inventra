@@ -12,10 +12,11 @@ from capabilities.capabilities import CapabilityService
 from prompts.prompts import REPLENISHMENT_AGENT_SYSTEM_PROMPT
 from schemas.llm_schemas import OfferSelection
 from tools.build_tools import build_tools
-from config.config import DeterministicConfig
+from config.config import InventraConfig
+
 
 class ReplenishmentAgent():
-    def __init__(self, llm, service: CapabilityService, config: DeterministicConfig, agent: str = "replenishment_agent"):
+    def __init__(self, llm, service: CapabilityService, config: InventraConfig, agent: str = "replenishment_agent"):
         self.service = service
         self.agent = agent
         self.llm_selector = llm.with_structured_output(OfferSelection)

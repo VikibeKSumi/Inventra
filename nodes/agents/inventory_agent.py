@@ -11,10 +11,15 @@ from state.state import InventraState
 from capabilities.capabilities import CapabilityService
 from prompts.prompts import INVENTORY_AGENT_SYSTEM_PROMPT
 from tools.build_tools import build_tools
-from config.config import DeterministicConfig
+from config.config import InventraConfig
 
 class InventoryAgent():
-    def __init__(self, llm, service: CapabilityService, config: DeterministicConfig, agent: str = "inventory_agent"):
+    def __init__(
+            self, 
+            llm, service: CapabilityService,
+            config: InventraConfig, agent: str = "inventory_agent"
+        ):
+        
         self.service = service
         self.agent = agent
         self.tools_list = self.get_tool_list()

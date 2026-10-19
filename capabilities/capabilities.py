@@ -7,7 +7,7 @@ from fractions import Fraction
 from math import ceil
 
 
-from config.config import DeterministicConfig
+from config.config import InventraConfig
 from capabilities.repository.sqlite_repository import SQLiteRepository
 from capabilities.repository.clock import Clock
 from schemas.capability_schemas import (
@@ -21,7 +21,12 @@ from schemas.capability_schemas import (
 
 
 class CapabilityService:
-    def __init__(self, repository: SQLiteRepository, clock: Clock, config: DeterministicConfig):
+    def __init__(
+            self, 
+            repository: SQLiteRepository, clock: Clock,
+            config: InventraConfig
+        ):
+        
         self.repository = repository     
         self.clock = clock               
         self.MIN_DAYS_HISTORY = config.min_days_history

@@ -1,9 +1,8 @@
-
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import InMemorySaver
 
 
-from config.config import DeterministicConfig
+from config.config import InventraConfig
 from state.state import InventraState
 from capabilities.capabilities import CapabilityService
 from nodes.llm.orchestrator import Orchestrator
@@ -19,11 +18,9 @@ from workflow.router import (
 )
 
 
-
-
 class InventraGraph():
 
-    def __init__(self, llm, service: CapabilityService, config: DeterministicConfig):
+    def __init__(self, llm, service: CapabilityService, config: InventraConfig):
      
         self.workflow = StateGraph(InventraState)
         self.orchestrator = Orchestrator(llm=llm).call_orchestrator
@@ -49,6 +46,7 @@ class InventraGraph():
         self.workflow.add_node("replenishment_agent_node", self.replenishment_agent)
         self.workflow.add_node("approve_hitl_node", self.approve_hitl)
         self.workflow.add_node("create_purchase_request_node", self.create_purchase_request)
+
     def build_edges(self):
         self.workflow.add_edge(START, "orchestrator_node")
         self.workflow.add_conditional_edges(
