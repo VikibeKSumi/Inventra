@@ -4,12 +4,12 @@
 from langgraph.types import interrupt
 from state.state import InventraState
 from capabilities.repository.clock import Clock
-from config.config import DeterministicConfig
+from config.config import InventraConfig
 
 
 class ApproveHITL():
 
-    def __init__(self, clock: Clock, config: DeterministicConfig):
+    def __init__(self, clock: Clock, config: InventraConfig):
         self.clock = clock
         self.MAX_REVISION = config.max_revision
 
