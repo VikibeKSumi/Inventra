@@ -1,0 +1,17 @@
+# --- core app ---
+langgraph
+langchain-core
+langchain-openai
+pydantic
+PyYAML
+python-dotenv
+
+# --- api ---
+fastapi
+uvicorn[standard]
+
+# --- cli output ---
+rich
+
+# --- dev / tests ---
+pytest

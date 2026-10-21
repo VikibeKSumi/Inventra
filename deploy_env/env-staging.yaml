@@ -1,0 +1,42 @@
+# Cloud Run service configuration for the staging target.
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: inventra-staging
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/invoker-iam-disabled: 'true'
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: '0'
+        autoscaling.knative.dev/maxScale: '2'
+    spec:
+      serviceAccountName: inventra-staging@inventra-512108.iam.gserviceaccount.com
+      containers:
+        # Cloud Deploy/Skaffold replaces this with the release's image digest.
+        - image: inventra-image-placeholder
+          command: ['uvicorn']
+          args: ['app:app', '--host', '0.0.0.0', '--port', '8000', '--env-file', '/secrets/.env']
+
+          ports:
+            - containerPort: 8000
+          resources:
+            limits:
+              cpu: '1'
+              memory: 512Mi
+          volumeMounts:
+            - name: app-secret-volume
+              mountPath: /secrets
+      volumes:
+        - name: app-secret-volume
+          secret:
+            secretName: inventra-secrets
+            items:
+              - key: '1'
+                path: .env
+
+  traffic:
+    - latestRevision: true
+      percent: 100

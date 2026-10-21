@@ -1,0 +1,13 @@
+apiVersion: skaffold/v4beta7
+kind: Config
+metadata:
+  name: inventra
+deploy:
+  cloudrun: {}
+profiles:
+  - name: staging
+    manifests:
+      rawYaml: [deploy_env/env-staging.yaml]
+  - name: production
+    manifests:
+      rawYaml: [deploy_env/env-production.yaml]
