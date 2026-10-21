@@ -225,3 +225,4 @@ tool_call.ipynb
 exploratory_testing/
 CLAUDE.md
 TODO.md
+scripts/setup-iam.sh
