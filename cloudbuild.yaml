@@ -1,0 +1,58 @@
+steps:
+  - id: unit-tests-merged
+    name: python:3.11-slim
+    entrypoint: sh
+    args:
+      - -c
+      - |
+        pip install --no-cache-dir -r requirements.txt &&
+        python -m unittest discover -s tests -v
+
+  - id: build-image
+    waitFor: ['unit-tests-merged']
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --platform=linux/amd64
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID
+      - .
+    
+  - id: push-to-artifacts-repo
+    waitFor: ['build-image']
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID
+
+ # Cloud Deploy owns staging rollout and production approval.
+  - id: create-release
+    waitFor: ['push-to-artifacts-repo']
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - scripts/create-release.sh
+      - $PROJECT_ID
+      - ${_REGION}
+      - ${_REPOSITORY}
+      - ${_SERVICE}
+      - $BUILD_ID
+      - ${_PIPELINE}
+      - ${_BUCKET}
+
+
+substitutions:
+  _REGION: asia-south1
+  _REPOSITORY: inventra-repo
+  _SERVICE: inventra-image
+  _BUCKET: inventra-release-bucket
+  _PIPELINE: inventra-pipeline
+
+# Record the image in the build results; BUILD_ID gives each build its own tag.
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1200s

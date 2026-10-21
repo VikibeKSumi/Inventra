@@ -1,0 +1,32 @@
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: staging
+run:
+  location: projects/inventra-512108/locations/asia-south1
+executionConfigs:
+  - usages: [RENDER, DEPLOY]
+    serviceAccount: inventra-deploy@inventra-512108.iam.gserviceaccount.com
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: production
+requireApproval: true
+run:
+  location: projects/inventra-512108/locations/asia-south1
+executionConfigs:
+  - usages: [RENDER, DEPLOY]
+    serviceAccount: inventra-deploy@inventra-512108.iam.gserviceaccount.com
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: DeliveryPipeline
+metadata:
+  name: inventra-pipeline
+description: Staging validation followed by approved production promotion
+serialPipeline:
+  stages:
+    - targetId: staging
+      profiles: [staging]
+    - targetId: production
+      profiles: [production]
