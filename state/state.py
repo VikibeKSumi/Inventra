@@ -33,7 +33,10 @@ class SharedState(TypedDict, total=False):
 
 class OrchestratorNodeOutput(TypedDict, total=False):
     # Routing field
-    next_destination: Literal["inventory_agent", "replenishment_agent", "needs_clarification", "out_of_scope"]
+    next_destination: Literal[
+        "inventory_agent", "replenishment_agent",
+        "needs_clarification", "out_of_scope"
+    ]
     # Payload
     instruction: Optional[str]
     clarification_question: Optional[str]
@@ -47,7 +50,10 @@ class OrchestratorNodeOutput(TypedDict, total=False):
 
 class InventoryAgentOutput(TypedDict, total=False):
     # Routing field
-    inventory_status: Literal["at_risk", "healthy", "blocked", "needs_information"]
+    inventory_status: Literal[
+        "at_risk", "healthy",
+        "blocked", "needs_information"
+    ]
     # Payload
     # ...
     # Explanation
@@ -56,7 +62,9 @@ class InventoryAgentOutput(TypedDict, total=False):
 
 class ReplenishmentAgentOutput(TypedDict, total=False):
     # Routing field
-    replenishment_status: Literal["awaiting_approval", "blocked"]
+    replenishment_status: Literal[
+        "awaiting_approval", "blocked"
+    ]
     # Payload
     vendor_id: str
     offer_id: str
