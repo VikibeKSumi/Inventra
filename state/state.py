@@ -78,7 +78,10 @@ class ReplenishmentAgentOutput(TypedDict, total=False):
 
 class ApprovalHITLOutput(TypedDict, total=False):
     # Routing field
-    decision: Literal["approve", "revise", "reject", "max_revision_crossed"]
+    decision: Literal[
+        "approve", "revise", 
+        "reject", "max_revision_crossed"
+    ]
     # Payload
     approver: str
     comment: str
