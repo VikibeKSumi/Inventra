@@ -1,13 +1,17 @@
 import os
 from dotenv import load_dotenv
 from datetime import datetime, timezone
-import json
+import sqlite3
 from typing import Optional
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
+from langgraph.checkpoint.postgres import PostgresSaver
+from psycopg import Connection
+from psycopg.rows import dict_row
 
 from config.config import config
 from workflow.workflow import InventraGraph
@@ -19,7 +23,7 @@ load_dotenv()
 
 LLM_MODEL_NAME = config.llm_model_name
 DB_PATH = config.db_path
-
+CHECKPOINT_DB_PATH = os.getenv("DATABASE_URL", config.checkpoint_path)
 
 app = FastAPI(title="Inventra assistant")
 llm = ChatOpenAI(
@@ -38,10 +42,16 @@ service = CapabilityService(
     clock=clock,
     config=config
 )
+
+conn = Connection.connect(CHECKPOINT_DB_PATH, autocommit=True, row_factory=dict_row)
+checkpointer = PostgresSaver(conn)
+checkpointer.setup() 
+
 inventra = InventraGraph(
     llm=llm,
     service=service,
-    config=config
+    config=config,
+    checkpointer=checkpointer
 )    
 graph = inventra.build_graph()
 

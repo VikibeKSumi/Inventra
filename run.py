@@ -7,6 +7,10 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
+from langgraph.checkpoint.postgres import PostgresSaver
+from psycopg import Connection
+from psycopg.rows import dict_row
+
 from workflow.workflow import InventraGraph
 from config.config import config
 from capabilities.capabilities import CapabilityService
@@ -29,8 +33,8 @@ if __name__ == "__main__":
         logger.info("Inventra loading...")
         LLM_MODEL_NAME = config.llm_model_name
         DB_PATH = config.db_path
-
-
+        CHECKPOINT_DB_PATH = os.getenv("DATABASE_URL", config.checkpoint_path)
+        
         llm = ChatOpenAI(
             api_key=os.getenv("OPENAI_API_KEY"),
             model=LLM_MODEL_NAME
@@ -47,11 +51,16 @@ if __name__ == "__main__":
             clock=clock,
             config=config
         )
-        
+   
+        conn = Connection.connect(CHECKPOINT_DB_PATH, autocommit=True, row_factory=dict_row)
+        checkpointer = PostgresSaver(conn)
+        checkpointer.setup()
+
         inventra = InventraGraph(
             llm=llm,
             service=service,
-            config=config
+            config=config,
+            checkpointer=checkpointer
         )
 
         graph = inventra.build_graph()
@@ -68,7 +77,9 @@ if __name__ == "__main__":
                 "messages": [
                     HumanMessage(content=user_input)
                 ]}
-            graph_config = {"configurable": {"thread_id": uuid4().hex}}
+            thread_id = uuid4().hex
+            print("THREAD ID: ", thread_id)
+            graph_config = {"configurable": {"thread_id": thread_id}}
 
             response = graph.invoke(
                 input=initial_state,
