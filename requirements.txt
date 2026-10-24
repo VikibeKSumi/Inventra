@@ -5,7 +5,8 @@ langchain-openai
 pydantic
 PyYAML
 python-dotenv
-
+langgraph-checkpoint-postgres
+psycopg[binary]
 # --- api ---
 fastapi
 uvicorn[standard]
@@ -15,3 +16,5 @@ rich
 
 # --- dev / tests ---
 pytest
+
+
