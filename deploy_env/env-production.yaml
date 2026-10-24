@@ -12,6 +12,7 @@ spec:
       annotations:
         autoscaling.knative.dev/minScale: '0'
         autoscaling.knative.dev/maxScale: '2'
+        run.googleapis.com/cloudsql-instances: inventra-512108:asia-south1:inventra-instance
     spec:
       serviceAccountName: inventra-prod@inventra-512108.iam.gserviceaccount.com
       containers:
@@ -33,7 +34,7 @@ spec:
           secret:
             secretName: inventra-secrets
             items:
-              - key: '1'
+              - key: 'latest'
                 path: .env
 
   traffic:
