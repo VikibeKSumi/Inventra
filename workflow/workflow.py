@@ -1,6 +1,5 @@
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.memory import InMemorySaver
-
+from langgraph.checkpoint.postgres import PostgresSaver
 
 from config.config import InventraConfig
 from state.state import InventraState
@@ -20,7 +19,10 @@ from workflow.router import (
 
 class InventraGraph():
 
-    def __init__(self, llm, service: CapabilityService, config: InventraConfig):
+    def __init__(
+            self,
+            llm, service: CapabilityService,
+            config: InventraConfig, checkpointer: PostgresSaver):
      
         self.workflow = StateGraph(InventraState)
         self.orchestrator = Orchestrator(llm=llm).call_orchestrator
@@ -35,7 +37,7 @@ class InventraGraph():
         self.router_inventory_agent = router_inventory_agent
         self.router_replenishment_agent = router_replenishment_agent
         self.router_approve_hitl = router_approve_hitl
-        self.checkpointer = InMemorySaver()
+        self.checkpointer = checkpointer
         self.graph = None
         
     def build_nodes(self):
