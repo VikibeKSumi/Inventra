@@ -38,5 +38,7 @@ class InventraConfig(BaseModel):
 
     # llm
     llm_model_name: str = Field(default="gpt-5.4-mini")
+    checkpoint_path: str = Field(default="postgresql://postgres:dev@localhost:5432/inventra")
+
     
 config = InventraConfig()
